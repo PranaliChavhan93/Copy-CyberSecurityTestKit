@@ -1,0 +1,78 @@
+import AmassParameters from "./AmassParameters";
+import Netdiscover from "./Netdiscover";
+
+function ToolParameters({ tool, parameters, setParameters }) {
+    if(tool?.tool_name === "Amass")
+    {
+        return (
+            <AmassParameters />
+        );
+    }
+
+    if(tool?.tool_name === "Sublist3r")
+    {
+        return (
+            <Netdiscover />
+        );
+    }
+
+    return (
+        <div className="tool-parameter-box">
+            <h3> {tool?.tool_name} Configuration </h3>
+            { Object.keys(parameters || {}).length === 0 ?
+                ( <p> Pending... </p> )
+                :
+                (
+                    <div className="parameter-grid">
+                    {
+                        Object.keys(parameters).map((key)=>(
+                            <div
+                                className="parameter-field"
+                                key={key}
+                            >
+                                <label>{key}</label>
+                                { typeof parameters[key] === "boolean"
+                                    ?
+                                    (
+                                        <input
+                                            type="checkbox"
+                                            checked={
+                                                parameters[key]
+                                            }
+                                            onChange={(e)=>{
+                                                setParameters({
+                                                    ...parameters,
+                                                    [key]:
+                                                    e.target.checked
+                                                });
+                                            }}
+                                        />
+                                    )
+                                    :
+                                    (
+                                        <input
+                                            type="text"
+                                            value={
+                                                parameters[key] || ""
+                                            }
+                                            onChange={(e)=>{
+                                                setParameters({
+                                                    ...parameters,
+                                                    [key]:
+                                                    e.target.value
+                                                });
+                                            }}
+                                        />
+                                    )
+                                }
+                            </div>
+                        ))
+                    }
+                    </div>
+                )
+            }
+        </div>
+    );
+}
+
+export default ToolParameters;

@@ -1,0 +1,303 @@
+
+import { useState } from "react";
+import "./SaveOutput.css";
+
+function Netdiscover() {
+    const [interfaceName, setInterfaceName] = useState("eth0");
+    const [range, setRange] = useState("");
+    const [mode, setMode] = useState("");
+    const [sleep, setSleep] = useState("");
+    const [outputFile, setOutputFile] = useState("");
+    const [output, setOutput] = useState("");
+    const [showPopup, setShowPopup] = useState(false);
+    const [isExecuting, setIsExecuting] = useState(false);
+    const [popupType, setPopupType] = useState(""); // "ai" or "download"
+    const [aiFeedback, setAiFeedback] = useState("");
+
+    const generateCommand = () => {
+        let cmd = "sudo netdiscover";
+
+        if (interfaceName)
+            cmd += ` -i ${interfaceName}`;
+        if (range)
+            cmd += ` -r ${range}`;
+        if (mode === "passive")
+            cmd += " -p";
+        if (mode === "fast")
+            cmd += " -f";
+        if (mode === "no-dns")
+            cmd += " -N";
+        if (mode === "verbose")
+            cmd += " -v";
+        if (sleep)
+            cmd += ` -s ${sleep}`;
+        if (outputFile)
+            cmd += ` > ${outputFile}`;
+        return cmd;
+    };
+
+    const runCommand = async () => {
+        setIsExecuting(true);
+        const cmd = generateCommand();
+        
+        try {
+            const response = await fetch(
+                "http://127.0.0.1:8000/tools/run/",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        command: cmd
+                    })
+                }
+            );
+
+            const data = await response.json();
+
+            setOutput(
+                prev =>
+                prev +
+                "\n" +
+                data.output
+            );
+
+        } catch (error) {
+            setOutput(
+                prev =>
+                prev +
+                "\nError : " +
+                error.message
+            );
+        } finally {
+            setIsExecuting(false);
+        }
+    };
+
+    const downloadTxtFile = (content, filename) => {
+        if (!filename.endsWith('.txt')) {
+            filename = filename + '.txt';
+        }
+
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+    };
+
+    const handlePassToAI = () => {
+        if (!output || output === "Waiting for execution...") {
+            alert("No output available! Please run the command first.");
+            return;
+        }
+        setPopupType("ai");
+        setShowPopup(true);
+    };
+
+    const handleDownload = () => {
+        if (!output || output === "Waiting for execution...") {
+            alert("No output available! Please run the command first.");
+            return;
+        }
+        setPopupType("download");
+        setShowPopup(true);
+    };
+
+    const handlePopupConfirm = () => {
+        if (popupType === "ai") {
+            // Send to AI
+            setAiFeedback("Output sent to AI for analysis!");
+            // Here you would call your AI API endpoint
+            sendToAI(output);
+            setTimeout(() => {
+                setShowPopup(false);
+                setAiFeedback("");
+                setPopupType("");
+            }, 2000);
+        } else if (popupType === "download") {
+            // Download the file
+            downloadTxtFile(output, outputFile || "netdiscover_results.txt");
+            setShowPopup(false);
+            setPopupType("");
+        }
+    };
+
+    const handlePopupCancel = () => {
+        setShowPopup(false);
+        setPopupType("");
+        setAiFeedback("");
+    };
+
+    const sendToAI = async (content) => {
+        try {
+            const response = await fetch("http://127.0.0.1:8000/ai/analyze/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    output: content
+                })
+            });
+            const data = await response.json();
+            console.log("AI Response:", data);
+        } catch (error) {
+            console.error("AI Error:", error);
+        }
+    };
+
+    return (
+        <div className="amass-box">
+            <h3>Netdiscover Configuration</h3>
+
+            <div className="amass-form">
+                <div className="amass-field">
+                    <label>Interface</label>
+                    <input
+                        value={interfaceName}
+                        placeholder="eth0"
+                        onChange={e => setInterfaceName(e.target.value)}
+                    />
+                </div>
+
+                <div className="amass-field">
+                    <label>Network Range</label>
+                    <input
+                        placeholder="192.168.1.0/24"
+                        value={range}
+                        onChange={e => setRange(e.target.value)}
+                    />
+                </div>
+
+                <div className="amass-field">
+                    <label>Scan Mode</label>
+                    <select
+                        value={mode}
+                        onChange={e => setMode(e.target.value)}
+                    >
+                        <option value="">Normal Scan</option>
+                        <option value="passive">Passive Mode (-p)</option>
+                        <option value="fast">Fast Mode (-f)</option>
+                        <option value="no-dns">Disable DNS (-N)</option>
+                        <option value="verbose">Verbose (-v)</option>
+                    </select>
+                </div>
+
+                <div className="amass-field">
+                    <label>Sleep Time</label>
+                    <input
+                        placeholder="10"
+                        value={sleep}
+                        onChange={e => setSleep(e.target.value)}
+                    />
+                </div>
+
+                <div className="amass-field">
+                    <label>Save Output File</label>
+                    <input
+                        placeholder="results.txt"
+                        value={outputFile}
+                        onChange={e => setOutputFile(e.target.value)}
+                    />
+                </div>
+            </div>
+
+            <div className="command-area">
+                <label>Generated Command</label>
+                <div className="command-preview">
+                    {generateCommand()}
+                </div>
+                <button
+                    className="run-btn"
+                    onClick={runCommand}
+                    disabled={isExecuting}
+                >
+                    {isExecuting ? 'Running...' : 'Run'}
+                </button>
+            </div>
+
+            <div className="command-area">
+                <label>Result</label>
+                <div className="terminal">
+                    <pre>
+                        {output || "Waiting for execution..."}
+                    </pre>
+                </div>
+                {output && output !== "Waiting for execution..." && (
+                    <div className="action-buttons">
+                        <button 
+                            className="pass-to-ai-btn"
+                            onClick={handlePassToAI}
+                        >
+                            Pass Output to AI
+                        </button>
+                        <button 
+                            className="download-btn"
+                            onClick={handleDownload}
+                        >
+                            Download TXT
+                        </button>
+                    </div>
+                )}
+            </div>
+
+            {/* Output Confirmation Popup - for AI and Download */}
+            {showPopup && (
+                <div className="popup-overlay">
+                    <div className="popup-box confirm-popup">
+                        <h3>{popupType === 'ai' ? 'Pass Output to AI' : '📥 Download TXT File'}</h3>
+                        
+                        <div className="popup-message">
+                            <p>
+                                {popupType === 'ai' 
+                                    ? 'Do you confirm this output is correct and want to send it to AI for analysis?'
+                                    : 'Do you confirm this output is correct and want to download it as a .txt file?'
+                                }
+                            </p>
+                        </div>
+
+                        <div className="popup-output-preview">
+                            <strong>Output Preview:</strong>
+                            <pre>{output ? output.substring(0, 300) + (output.length > 300 ? '...' : '') : 'No output available'}</pre>
+                        </div>
+
+                        {popupType === 'download' && outputFile && (
+                            <p className="popup-file-info">
+                                Filename: <strong>{outputFile.endsWith('.txt') ? outputFile : outputFile + '.txt'}</strong>
+                            </p>
+                        )}
+
+                        <div className="popup-buttons">
+                            <button 
+                                className="popup-cancel-btn"
+                                onClick={handlePopupCancel}
+                            >
+                                No, It's Wrong
+                            </button>
+                            <button 
+                                className="popup-confirm-btn"
+                                onClick={handlePopupConfirm}
+                            >
+                                Yes, It's Right
+                            </button>
+                        </div>
+
+                        {aiFeedback && (
+                            <div className="ai-feedback">
+                                {aiFeedback}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+export default Netdiscover;

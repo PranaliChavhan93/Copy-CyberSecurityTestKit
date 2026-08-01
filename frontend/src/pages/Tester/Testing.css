@@ -1,0 +1,906 @@
+/* TESTING WORKSPACE - MODERN UI */
+
+/* --- Main Container --- */
+
+.testing-page{
+    width:95%;
+    margin:20px auto;
+    font-family:Arial, Helvetica, sans-serif;
+}
+
+.testing-page h2 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.testing-page h2 i {
+    color: #4a6cf7;
+}
+
+/* PROJECT INFORMATION CARD */
+.project-info-box,
+.stage-header,
+.tool-parameter-box,
+.tool-parameters-wrapper {
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px 28px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    margin-bottom: 24px;
+    border: 1px solid #e8ecf4;
+}
+
+.project-info-box h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.project-info-box h3 i {
+    color: #4a6cf7;
+}
+
+.project-details {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px 24px;
+}
+
+.info-row {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.info-row label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.info-row span {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1a1a2e;
+}
+
+.info-row .priority-badge {
+    display: inline-block;
+    padding: 2px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    width: fit-content;
+}
+
+.info-row .priority-badge.high {
+    background: rgba(220, 38, 38, 0.1);
+    color: #dc2626;
+}
+
+.info-row .priority-badge.medium {
+    background: rgba(217, 119, 6, 0.1);
+    color: #d97706;
+}
+
+.info-row .priority-badge.low {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+}
+
+.info-row .status-badge {
+    display: inline-block;
+    padding: 2px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    width: fit-content;
+}
+
+.info-row .status-badge.active {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+}
+
+.info-row .status-badge.pending {
+    background: rgba(217, 119, 6, 0.1);
+    color: #d97706;
+}
+
+.info-row .status-badge.completed {
+    background: rgba(74, 108, 247, 0.1);
+    color: #4a6cf7;
+}
+
+/* Stages */
+.stage-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+
+    margin-bottom:30px;
+    border-radius: 16px;
+    padding:20px;
+    background:white;
+    border:1px solid #d8d8d8;
+
+}
+
+.stage-item{
+    flex:1;
+    position:relative;
+    text-align:center;
+}
+
+.circle{
+    width:40px;
+    height:40px;
+    border-radius:50%;
+    background:#d9d9d9;
+    color:black;
+    margin:auto;
+    line-height:40px;
+    font-weight:bold;
+}
+
+.circle.active{
+    background:#1976d2;
+    color:white;
+}
+
+.circle.completed{
+    background:#2e7d32;
+    color:white;
+}
+
+.stage-item span{
+    display:block;
+    margin-top:8px;
+    font-size:13px;
+    font-weight:600;
+}
+
+.line{
+    position:absolute;
+    top:20px;
+    left:60%;
+    width:80%;
+    height:3px;
+    background:#c7c7c7;
+    z-index:-1;
+}
+
+
+/* TOOL CONTROLS */
+.tool-control-box {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px 24px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    margin-bottom: 24px;
+    border: 1px solid #e8ecf4;
+}
+
+.tool-control-box .field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tool-control-box .field label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7a9a;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.tool-control-box .field select {
+    padding: 10px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #1a1a2e;
+    background: #f8faff;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.tool-control-box .field select:focus {
+    outline: none;
+    border-color: #4a6cf7;
+    box-shadow: 0 0 0 3px rgba(74, 108, 247, 0.1);
+}
+
+.tool-control-box .field select:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.tool-control-box .field .selected-tool {
+    padding: 10px 14px;
+    background: #f8faff;
+    border-radius: 8px;
+    border: 1px solid #e8ecf4;
+    font-size: 14px;
+    color: #1a1a2e;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.tool-control-box .field .selected-tool i {
+    color: #4a6cf7;
+}
+
+/* TOOL PARAMETERS CARD */
+.tool-parameters-wrapper {
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px 28px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e8ecf4;
+}
+
+.tool-parameters-wrapper .tool-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e8ecf4;
+}
+
+.tool-parameters-wrapper .tool-header .tool-name {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a1a2e;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.tool-parameters-wrapper .tool-header .tool-name i {
+    color: #4a6cf7;
+}
+
+.tool-parameters-wrapper .tool-header .tool-version {
+    font-size: 13px;
+    color: #6b7a9a;
+    background: #f0f2f8;
+    padding: 2px 14px;
+    border-radius: 12px;
+}
+
+.tool-parameters-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.param-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.param-group label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7a9a;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.param-group input,
+.param-group select {
+    padding: 10px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #1a1a2e;
+    background: #f8faff;
+    transition: 0.2s;
+}
+
+.param-group input:focus,
+.param-group select:focus {
+    outline: none;
+    border-color: #4a6cf7;
+    box-shadow: 0 0 0 3px rgba(74, 108, 247, 0.1);
+}
+
+.param-group input:disabled {
+    background: #f0f2f8;
+    cursor: not-allowed;
+}
+
+/* --- Generated Command --- */
+.command-box {
+    grid-column: 1 / -1;
+    background: #0a0e1a;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-top: 4px;
+}
+
+.command-box .command-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #6b7a9a;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.command-box .command-label i {
+    color: #22c55e;
+}
+
+.command-box .command-text {
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    color: #22c55e;
+    padding: 8px 12px;
+    background: rgba(34, 197, 94, 0.05);
+    border-radius: 6px;
+    border: 1px solid rgba(34, 197, 94, 0.1);
+    word-break: break-all;
+}
+
+.command-box .command-text .prompt {
+    color: #ffd700;
+}
+
+/* --- Run Button --- */
+.run-section {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+}
+
+.run-btn {
+    padding: 12px 32px;
+    background: #4a6cf7;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.run-btn:hover {
+    background: #3b5de7;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(74, 108, 247, 0.3);
+}
+
+.run-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.run-btn.running {
+    background: #d97706;
+    animation: pulse-btn 1.5s ease-in-out infinite;
+}
+
+.run-btn i {
+    font-size: 16px;
+}
+
+/* --- Status Message --- */
+.status-message {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    grid-column: 1 / -1;
+}
+
+.status-message.waiting {
+    background: #f0f2f8;
+    color: #6b7a9a;
+}
+
+.status-message.running {
+    background: rgba(217, 119, 6, 0.1);
+    color: #d97706;
+}
+
+.status-message.success {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+}
+
+.status-message.error {
+    background: rgba(220, 38, 38, 0.1);
+    color: #dc2626;
+}
+
+.status-message i {
+    font-size: 18px;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 1024px) {
+    .project-details {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .tool-parameters-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .testing-page {
+        padding: 16px;
+    }
+
+    .project-details {
+        grid-template-columns: 1fr;
+    }
+
+    .tool-control-box {
+        grid-template-columns: 1fr;
+    }
+
+    .project-info-box,
+    .stage-header-wrapper,
+    .tool-control-box,
+    .tool-parameters-wrapper {
+        padding: 16px;
+    }
+
+    .stage-progress-bar {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .stage-progress-bar .stage-item {
+        flex: 0 0 calc(20% - 4px);
+    }
+
+    .stage-progress-bar .stage-connector {
+        display: none;
+    }
+
+    .run-section {
+        flex-direction: column;
+    }
+
+    .run-btn {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .stage-progress-bar .stage-item {
+        flex: 0 0 100%;
+        flex-direction: row;
+        gap: 12px;
+        justify-content: flex-start;
+        padding: 6px 12px;
+        background: #f8faff;
+        border-radius: 8px;
+    }
+
+    .stage-progress-bar .stage-item .stage-dot {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+
+    .stage-progress-bar .stage-item .stage-label {
+        margin-top: 0;
+    }
+
+    .command-box .command-text {
+        font-size: 12px;
+    }
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+@keyframes pulse-ring {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(74, 108, 247, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 0 8px rgba(74, 108, 247, 0.1);
+    }
+}
+
+@keyframes pulse-btn {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.project-info-box,
+.stage-header-wrapper,
+.tool-control-box,
+.tool-parameters-wrapper {
+    animation: fadeInUp 0.4s ease forwards;
+}
+
+.project-info-box { animation-delay: 0.05s; }
+.stage-header-wrapper { animation-delay: 0.1s; }
+.tool-control-box { animation-delay: 0.15s; }
+.tool-parameters-wrapper { animation-delay: 0.2s; }
+
+/* ============================================
+   AMASS PARAMETERS - MODERN STYLING
+   ============================================ */
+
+.amass-box {
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px 28px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e8ecf4;
+    margin-bottom: 24px;
+    animation: fadeInUp 0.4s ease forwards;
+}
+
+.amass-box h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.amass-box h3 i {
+    color: #4a6cf7;
+}
+
+/* ============================================
+   AMASS FORM - GRID LAYOUT
+   ============================================ */
+.amass-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.amass-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.amass-field label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7a9a;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.amass-field label i {
+    color: #4a6cf7;
+}
+
+.amass-field select,
+.amass-field input {
+    padding: 10px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #1a1a2e;
+    background: #f8faff;
+    transition: 0.2s;
+    width: 100%;
+}
+
+.amass-field select:focus,
+.amass-field input:focus {
+    outline: none;
+    border-color: #4a6cf7;
+    box-shadow: 0 0 0 3px rgba(74, 108, 247, 0.1);
+    background: #fff;
+}
+
+.amass-field select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7a9a' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+}
+
+.amass-field input::placeholder {
+    color: #9ca3af;
+}
+
+/* ============================================
+   COMMAND AREA
+   ============================================ */
+.command-area {
+    margin-top: 16px;
+}
+
+.command-area label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7a9a;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.command-area label i {
+    color: #4a6cf7;
+}
+
+.command-preview {
+    background: #f8faff;
+    color: #1a1a2e;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    border: 1px solid #d1d5db;
+
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    word-break: break-all;
+
+    transition: 0.2s;
+}
+
+.command-preview .placeholder {
+    color: #6b7a9a;
+    font-style: italic;
+}
+
+/* Run Button */
+.run-btn {
+    padding: 12px 32px;
+    background: #4a6cf7;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.run-btn:hover {
+    background: #3b5de7;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(74, 108, 247, 0.3);
+}
+
+.run-btn:active {
+    transform: translateY(0);
+}
+
+.run-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.run-btn.running {
+    background: #d97706;
+    animation: pulse-btn 1.5s ease-in-out infinite;
+}
+
+.run-btn i {
+    font-size: 16px;
+}
+
+/* Terminal Output */
+.terminal {
+    background: #0a0e1a;
+    border-radius: 10px;
+    padding: 16px 20px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    min-height: 120px;
+    max-height: 300px;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+}
+
+.terminal pre {
+    color: #22c55e;
+    font-size: 13px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-all;
+    margin: 0;
+    font-family: 'Courier New', monospace;
+}
+
+.terminal pre .error {
+    color: #dc2626;
+}
+
+.terminal pre .success {
+    color: #22c55e;
+}
+
+.terminal pre .info {
+    color: #4fc3f7;
+}
+
+.terminal pre .warning {
+    color: #ffd700;
+}
+
+/* Terminal Scrollbar */
+.terminal::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.terminal::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 10px;
+}
+
+.terminal::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+.terminal::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 768px) {
+    .amass-box {
+        padding: 16px 18px;
+    }
+
+    .amass-form {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .command-preview {
+        font-size: 12px;
+        padding: 12px 14px;
+        min-height: 40px;
+    }
+
+    .run-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .terminal {
+        min-height: 80px;
+        max-height: 200px;
+        padding: 12px 14px;
+    }
+
+    .terminal pre {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .amass-box {
+        padding: 12px 14px;
+    }
+
+    .command-preview {
+        font-size: 11px;
+        padding: 10px 12px;
+    }
+
+    .terminal pre {
+        font-size: 11px;
+    }
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse-btn {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
+}
+
+@keyframes cursor-blink {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0;
+    }
+}
+
+.terminal .cursor {
+    display: inline-block;
+    width: 8px;
+    height: 16px;
+    background: #22c55e;
+    animation: cursor-blink 1s step-end infinite;
+    vertical-align: text-bottom;
+    margin-left: 2px;
+}
