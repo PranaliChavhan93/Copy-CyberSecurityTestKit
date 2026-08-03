@@ -89,7 +89,7 @@ function App() {
           </Layout>} 
         />
         
-        <Route path="/user/view" element={
+        <Route path="/user/view/" element={
           <Layout>
             <UserView />
           </Layout>} 

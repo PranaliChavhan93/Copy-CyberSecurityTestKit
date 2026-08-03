@@ -87,7 +87,7 @@ urlpatterns = [
 
     path('master/', master_dashboard),
 
-    path('user/', user_view),
+    path('user/view/', user_view),
     path('user/create/', user_creation),
     path('user/delete/<str:user_id>/', delete_user),
     path('user/update/<str:user_id>/', update_user),

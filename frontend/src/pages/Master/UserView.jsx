@@ -677,7 +677,7 @@ function UserView() {
 
     const fetchUsers = async () => {
         try {
-            const res = await fetch("http://127.0.0.1:8000/user/");
+            const res = await fetch("http://127.0.0.1:8000/user/view/");
             const data = await res.json();
             setUsers(data);
         } catch (err) {

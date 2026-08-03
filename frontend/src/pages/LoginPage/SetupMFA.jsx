@@ -13,7 +13,35 @@ function SetupMFA() {
 
   const user_id = sessionStorage.getItem("user_id");
 
+  // useEffect(() => {
+  //   fetch("http://127.0.0.1:8000/setup-mfa/", {
+  //     method: "POST",
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //     },
+  //     body: JSON.stringify({
+  //       user_id,
+  //     }),
+  //   })
+  //     .then((res) => res.json())
+  //     .then((data) => {
+  //       if (data.success) {
+  //         setQrCode(data.qr_code);
+  //       } else {
+  //         setError(data.message);
+  //       }
+  //     })
+  //     .catch(() => {
+  //       setError("Unable to load QR Code.");
+  //     });
+  // }, [user_id]);
+
   useEffect(() => {
+    if (!user_id) {
+      setError("User not authenticated. Please login again.");
+      return;
+    }
+
     fetch("http://127.0.0.1:8000/setup-mfa/", {
       method: "POST",
       headers: {
@@ -23,7 +51,15 @@ function SetupMFA() {
         user_id,
       }),
     })
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          if (res.status === 401) {
+            throw new Error("Authentication required. Please login again.");
+          }
+          throw new Error(`Server error: ${res.status}`);
+        }
+        return res.json();
+      })
       .then((data) => {
         if (data.success) {
           setQrCode(data.qr_code);
@@ -31,8 +67,9 @@ function SetupMFA() {
           setError(data.message);
         }
       })
-      .catch(() => {
-        setError("Unable to load QR Code.");
+      .catch((error) => {
+        console.error("Error fetching QR code:", error);
+        setError(error.message || "Unable to load QR Code. Please try again.");
       });
   }, [user_id]);
 

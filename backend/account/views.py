@@ -1354,7 +1354,9 @@ from account.serialization import (
     ProjectSerializer,
     ToolParameterSerializer,
 )
-from backend.backend import settings
+
+# from backend.backend import settings
+from django.conf import settings
 
 from .models import (
     Project,
@@ -1371,10 +1373,7 @@ from .models import (
 )
 
 from rest_framework import status
-from audits.utils import create_log
 from django.shortcuts import get_object_or_404
-
-from rest_framework_simplejwt.tokens import RefreshToken
 
 
 @api_view(["POST"])
@@ -1454,6 +1453,7 @@ def generate_qr_code(user):
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def setup_mfa(request):
+    """Public endpoint - No authentication required"""
     user_id = request.data.get("user_id")
 
     if not user_id:
@@ -1464,7 +1464,6 @@ def setup_mfa(request):
 
     try:
         user = User.objects.get(id=user_id)
-
         qr = generate_qr_code(user)
 
         return Response({
@@ -1477,31 +1476,46 @@ def setup_mfa(request):
             "success": False,
             "message": "User not found"
         }, status=404)
-    
+
 
 @api_view(["POST"])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def verify_totp(request):
+    """Public endpoint - No authentication required"""
     user_id = request.data.get("user_id")
     code = request.data.get("totp")
-
+    
+    if not user_id or not code:
+        return Response({
+            "success": False,
+            "message": "user_id and totp are required"
+        }, status=400)
+    
     try:
         user = User.objects.get(id=user_id)
-
+        
+        if not user.totp_secret:
+            return Response({
+                "success": False,
+                "message": "TOTP not set up for this user"
+            }, status=400)
+        
         totp = pyotp.TOTP(user.totp_secret)
-
-        if totp == "":
-            return Response({"message": "Please Enter OTP"})
-
+        
+        if not code:
+            return Response({
+                "success": False,
+                "message": "Please enter OTP"
+            }, status=400)
+        
         if not totp.verify(code, valid_window=1):
             return Response({
                 "success": False,
                 "message": "Invalid OTP"
             }, status=400)
-
+        
         refresh = RefreshToken.for_user(user)
-
+        
         return Response({
             "success": True,
             "access": str(refresh.access_token),
@@ -1509,14 +1523,13 @@ def verify_totp(request):
             "role": user.role,
             "username": user.username,
         })
-
+        
     except User.DoesNotExist:
         return Response({
             "success": False,
             "message": "User not found"
         }, status=404)
     
-
 @api_view(["GET"])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -1589,7 +1602,6 @@ def change_password(request):
         "message":"Password Changed Successfully"
     })
 
-
 # @api_view(['POST'])
 # create_log(
 #     event_id = 1001,
@@ -1601,8 +1613,7 @@ def change_password(request):
 
 
 @api_view(['GET'])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def master_dashboard(request):
     return Response({
         "message": "Welcome to Master Dashboard"
@@ -1688,8 +1699,7 @@ def customer_view(request):
     return Response(data)
  
 @api_view(["GET"])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def user_view(request):
     users = User.objects.all()
 
@@ -1819,8 +1829,7 @@ def project_creation(request):
 
 
 @api_view(["GET"])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def project_view(request):
     projects = Project.objects.select_related(
         "customer",
@@ -1860,22 +1869,19 @@ def project_view(request):
 
     return Response(data)
 
-# Project.project_type codes don't exactly match Suites.suite_name/suite_code
-# (e.g. project_type "WEBAPP" vs suite "WEB", "IOT" vs suite "EMBEDDED"), so
-# map one to the other to auto-resolve a project's suite.
 PROJECT_TYPE_TO_SUITE_CODE = {
     "WEBAPP": "WEB",
     "MOBILE": "MOBILE",
     "NETWORK": "NETWORK",
-    "IOT": "EMBEDDED",
+    "IOT": "IOT",
+    "EMBEDDED": "EMBEDDED",
     "RADIO": "RADIO",
     "THICK": "THICK_CLIENT",
     "SOURCE": "SOURCE_CODE",
 }
 
 @api_view(['GET'])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def suites(request):
     suites = Suites.objects.all()
 
@@ -1921,8 +1927,7 @@ def suite_create(request):
     })
 
 @api_view(["GET"])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def stages(request):
 
     suite_id = request.GET.get("suite")
@@ -1947,8 +1952,7 @@ def stages(request):
     return Response(data)
 
 @api_view(['GET'])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def protocols(request):
     protocols = Protocols.objects.all()
 
@@ -2042,8 +2046,7 @@ def protocol_creation(request):
     })
 
 @api_view(["GET"])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def protocols_by_category(request):
     category = request.GET.get("category")
 
@@ -2063,8 +2066,7 @@ def protocols_by_category(request):
 
 
 @api_view(["GET"])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def protocol_details(request, id):
 
     protocol = get_object_or_404( Protocols, protocol_id=id )
@@ -2096,8 +2098,7 @@ def protocol_details(request, id):
 
 
 @api_view(['GET'])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def reports(request):
     reports = Reports.objects.select_related('project').all()
     
@@ -2126,8 +2127,7 @@ def get_choice_data(choices):
     ]
 
 @api_view(["GET"])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def protocol_categories(request):
     data = get_choice_data(
         Protocols.CATEGORY_CHOICES
@@ -2135,8 +2135,7 @@ def protocol_categories(request):
     return Response(data)
 
 @api_view(["GET"])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def protocol_types(request):
     data = get_choice_data(
         Protocols.PROTOCOL_TYPE
@@ -2144,18 +2143,15 @@ def protocol_types(request):
     return Response(data)
 
 @api_view(["GET"])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def osi_layers(request):
     data = get_choice_data(
         Protocols.OSI_LAYER_CHOICES
     )
     return Response(data)
 
-
 @api_view(["GET"])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def transport_protocols(request):
     data = []
     for index, (value, name) in enumerate(
@@ -2170,8 +2166,7 @@ def transport_protocols(request):
     return Response(data)
 
 @api_view(["GET"])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def communication_models(request):
     data = []
     for index, (value, name) in enumerate(
@@ -2185,10 +2180,8 @@ def communication_models(request):
 
     return Response(data)
 
-
 @api_view(["GET"])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def used_in(request):
     data = get_choice_data(
         Protocols.USED_IN
@@ -2196,8 +2189,7 @@ def used_in(request):
     return Response(data)
 
 @api_view(["GET"])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def used_by(request):
     data = get_choice_data(
         Protocols.USED_BY
@@ -2205,8 +2197,7 @@ def used_by(request):
     return Response(data)
 
 @api_view(["GET"])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def data_format(request):
     data = get_choice_data(
         Protocols.DATA_FORMAT
@@ -2214,8 +2205,7 @@ def data_format(request):
     return Response(data)
 
 @api_view(["GET"])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def protocol_authentication(request):
     data = get_choice_data(
         Protocols.PROTOCOL_AUTHENTICATION
@@ -2223,22 +2213,20 @@ def protocol_authentication(request):
     return Response(data)
 
 @api_view(["GET"])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def encryption(request):
     data = get_choice_data(
         Protocols.ENCRYPTION
     )
     return Response(data)
 
-# @api_view(["GET"])
-# @authentication_classes([JWTAuthentication])
-# @permission_classes([IsAuthenticated])
-# def standard_rfc(request):
-#     data = get_choice_data(
-#         Protocols.STANDARDS_RFC
-#     )
-#     return Response(data)
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def standard_rfc(request):
+    data = get_choice_data(
+        Protocols.STANDARDS_RFC
+    )
+    return Response(data)
 
 @api_view(["GET"])
 @authentication_classes([JWTAuthentication])
@@ -2288,8 +2276,7 @@ def tools(request):
     return Response(data)
 
 @api_view(["POST"])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def tools_create(request):
 
     tool = Tools.objects.create(
@@ -2365,24 +2352,21 @@ def save_output(request):
         )
 
 @api_view(['GET'])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def admin_dashboard(request):
     return Response({
         "message": "Welcome to Admin Dashboard"
     })
 
 @api_view(['GET'])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def supportadmin_dashboard(request):
     return Response({
         "message": "Welcome to Support Admin Dashboard"
     })
 
 @api_view(['GET'])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def testmanager_dashboard(request):
     return Response({
         "message": "Welcome to Test Manager Dashboard"
@@ -2406,7 +2390,6 @@ def testmanager_creation(request):
 
 @api_view(["GET"])
 @authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
 @permission_classes([IsAuthenticated])
 def manager_projects(request):
     if request.user.role != "TEST_MANAGER":
@@ -2438,218 +2421,44 @@ def manager_projects(request):
 
     return Response(data)
 
-# @api_view(["PUT"])
-# @authentication_classes([JWTAuthentication])
-# @permission_classes([IsAuthenticated])
-# def assign_tester(request, project_id):
-    try:
-        project = Project.objects.get(
-            project_id=project_id,
-            manager=request.user
-        )
-
-    except Project.DoesNotExist:
-        return Response(
-            {
-                "error":"Project not found"
-            },
-            status=404
-        )
-
-    tester_id = request.data.get("tester")
-
-    try:
-        tester = User.objects.get(
-            id=tester_id,
-            role="TESTER"
-        )
-
-    except User.DoesNotExist:
-        return Response(
-            {
-                "error":"Tester not found"
-            },
-            status=404
-        )
-
-    ProjectAssignment.objects.create(
-        project=project,
-        tester=tester,
-        assigned_by=request.user
-    )
-
-    project.status="TESTER_ASSIGNED"
-    project.save()
-
-    return Response(
-        {
-            "message":"Tester assigned successfully",
-            "project_id":project.project_id,
-            "tester":tester.username,
-            "status":project.status
-        },
-        status=200
-    )
-
-# @api_view(['POST', 'PUT'])  # Add this decorator to accept POST
-# @permission_classes([IsAuthenticated])
-# def assign_tester(request, project_id):
-    """
-    Assign a tester to a project
-    """
-    try:
-        # Get the project
-        project = get_object_or_404(Project, project_id=project_id)
-        
-        # Get tester_id from request body
-        tester_id = request.data.get('tester_id')
-        
-        if not tester_id:
-            return Response(
-                {"error": "tester_id is required"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Get the tester
-        try:
-            tester = User.objects.get(id=tester_id, role='TESTER')
-        except User.DoesNotExist:
-            return Response(
-                {"error": "Tester not found"},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        
-        # Check if already assigned
-        existing_assignment = ProjectAssignment.objects.filter(
-            project=project,
-            tester=tester
-        ).first()
-        
-        if existing_assignment:
-            return Response(
-                {"error": "Tester already assigned to this project"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Create assignment
-        assignment = ProjectAssignment.objects.create(
-            project=project,
-            tester=tester,
-            assigned_by=request.user
-        )
-        
-        # Update project status
-        project.status = 'TESTER_ASSIGNED'
-        project.save()
-        
-        return Response({
-            "message": "Tester assigned successfully",
-            "assignment_id": assignment.id,
-            "tester": {
-                "id": tester.id,
-                "first_name": tester.first_name,
-                "last_name": tester.last_name,
-                "email": tester.email
-            },
-            "project": {
-                "id": project.project_id,
-                "name": project.project_name,
-                "status": project.status
-            }
-        }, status=status.HTTP_201_CREATED)
-        
-    except Project.DoesNotExist:
-        return Response(
-            {"error": "Project not found"},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    except Exception as e:
-        print(f"Error in assign_tester: {str(e)}")
-        return Response(
-            {"error": str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-
 @api_view(['POST', 'PUT'])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 def assign_tester(request, project_id):
     try:
-        project = Project.objects.get(
-            project_id=project_id,
-            manager=request.user
-        )
-
+        project = Project.objects.get(project_id=project_id, manager=request.user)
     except Project.DoesNotExist:
-        return Response(
-            {
-                "error": "Project not found"
-            },
-            status=404
-        )
+        return Response({"error": "Project not found"}, status=404)
 
-    # Support both 'tester' and 'tester_id' field names
     tester_id = request.data.get("tester_id") or request.data.get("tester")
-
     if not tester_id:
-        return Response(
-            {
-                "error": "tester_id or tester is required"
-            },
-            status=400
-        )
+        return Response({"error": "tester_id or tester is required"}, status=400)
 
     try:
-        tester = User.objects.get(
-            id=tester_id,
-            role="TESTER"
-        )
-
+        tester = User.objects.get(id=tester_id, role="TESTER")
     except User.DoesNotExist:
-        return Response(
-            {
-                "error": "Tester not found"
-            },
-            status=404
-        )
+        return Response({"error": "Tester not found"}, status=404)
 
-    # Check if already assigned
-    existing_assignment = ProjectAssignment.objects.filter(
-        project=project,
-        tester=tester
-    ).first()
-    
-    if existing_assignment:
-        return Response(
-            {"error": "Tester already assigned to this project"},
-            status=400
-        )
+    if ProjectAssignment.objects.filter(project=project, tester=tester).exists():
+        return Response({"error": "Tester already assigned to this project"}, status=400)
 
-    # Create assignment
     ProjectAssignment.objects.create(
         project=project,
         tester=tester,
         assigned_by=request.user
     )
-
-    # Update project status
     project.status = "TESTER_ASSIGNED"
     project.save()
 
-    return Response(
-        {
-            "message": "Tester assigned successfully",
-            "project_id": project.project_id,
-            "tester": tester.username,
-            "status": project.status
-        },
-        status=200
-    )
-
+    return Response({
+        "message": "Tester assigned successfully",
+        "project_id": project.project_id,
+        "tester": tester.username,
+        "status": project.status
+    }, status=200)
 
 @api_view(['GET'])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def tester_dashboard(request):
     return Response({
         "message": "Welcome to Tester Dashboard"
@@ -2852,8 +2661,7 @@ def testing(request, project_id):
     })
 
 @api_view(['GET'])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def customer_dashboard(request):
     return Response({
         "message": "Welcome to Customer Dashboard"
@@ -2981,8 +2789,7 @@ def run_amass(request):
 
 
 @api_view(["GET"])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def parameter_list(request):
     tool = request.GET.get("tool")
     parameters = ToolParameter.objects.filter(

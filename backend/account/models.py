@@ -172,6 +172,7 @@ class Project(models.Model):
         ("MOBILE", "Mobile"),
         ("NETWORK", "Network"),
         ("IOT", "IOT"),
+        ("EMBEDDED", "Embedded"),
         # ("RADIO", "Radio"),
         ("THICK", "Thick Client"),
         ("SOURCE", "Source Code Analysis"),
@@ -526,6 +527,7 @@ class Protocols(models.Model):
         ("MOBILE","Mobile"),
         ("NETWORK","Networking"),
         ("IOT","IoT"),
+        ("EMBEDDED","Embedded"),
         ("RADIO","Radio"),
         ("THICK","Thick Client"),
         ("SOURCE","Source Code Analysis"),
@@ -842,3 +844,4 @@ class ToolParameter(models.Model):
 
     def __str__(self):
         return f"{self.tool.tool_name} - {self.parameter_label}"
+    

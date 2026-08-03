@@ -213,8 +213,10 @@
     margin-top:70px;
     padding:28px;
     min-height:calc(100vh - 70px);
+    background: transparent;
 
-    background:linear-gradient(135deg,#eef7fb,#a9cef9);
+    background:red;
+    /* background:linear-gradient(135deg,#eef7fb,#a9cef9); */
 }
 
 /* ================= Scrollbar ================= */
