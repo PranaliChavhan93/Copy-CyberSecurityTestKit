@@ -280,13 +280,7 @@ function Tools() {
                         </thead>
 
                         <tbody>
-                            {loading ? (
-                                <tr>
-                                    <td colSpan="6" className="text-center">
-                                        Loading tools...
-                                    </td>
-                                </tr>
-                            ) : currentTools.length === 0 ? (
+                            {currentTools.length === 0 ? (
                                 <tr>
                                     <td colSpan="6" className="empty-table-state">
                                         <div className="empty-state-content">

@@ -1172,7 +1172,6 @@ function TMProjects() {
     const [showAssignPopup, setShowAssignPopup] = useState(false);
     const [selectedProject, setSelectedProject] = useState(null);
 
-    // Helper to get project icon
     const getProjectIcon = (type) => {
         const icons = {
             WEBAPP: "🌐",

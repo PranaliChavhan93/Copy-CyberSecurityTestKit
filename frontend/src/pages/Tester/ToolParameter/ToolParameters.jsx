@@ -1,5 +1,7 @@
 import AmassParameters from "./AmassParameters";
 import Netdiscover from "./Netdiscover";
+import ReconParameter from "./ReconParameter";
+import OwaspParameter from "./OwaspParameter";
 
 function ToolParameters({ tool, parameters, setParameters }) {
     if(tool?.tool_name === "Amass")
@@ -14,6 +16,20 @@ function ToolParameters({ tool, parameters, setParameters }) {
         return (
             <Netdiscover />
         );
+    }
+
+    if(tool?.tool_name === "Recon-ng")
+    {
+        return (
+            <ReconParameter />
+        );
+    }
+
+    if(tool?.tool_name === "OWASP ZWAP")
+    {
+        return(
+            <OwaspParameter />
+        )
     }
 
     return (

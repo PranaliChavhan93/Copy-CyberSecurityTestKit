@@ -5,8 +5,7 @@
     font-family:Arial, Helvetica, sans-serif;
 }
 
-/* ================= Layout ================= */
-
+/* Layout */
 .layout{
     display:flex;
     min-height:100vh;
@@ -24,8 +23,7 @@
     width:calc(100% - 70px);
 }
 
-/* ================= Sidebar ================= */
-
+/* Sidebar */
 .sidebar{
     position:fixed;
     top:0;
@@ -94,8 +92,6 @@
     display:none;
 }
 
-/* ================= Top Navbar ================= */
-
 .top-navbar{
     position:fixed;
     top:0;
@@ -123,7 +119,6 @@
 }
 
 /* Left */
-
 .nav-left{
     display:flex;
     align-items:center;
@@ -139,7 +134,6 @@
 }
 
 /* Search */
-
 .nav-search{
     width:520px;
     max-width:45vw;
@@ -167,7 +161,6 @@
 }
 
 /* Right */
-
 .profile-section{
     display:flex;
     align-items:center;
@@ -207,19 +200,14 @@
     box-shadow:0 4px 12px rgba(0,0,0,.15);
 }
 
-/* ================= Page Content ================= */
-
 .content{
     margin-top:70px;
     padding:28px;
     min-height:calc(100vh - 70px);
     background: transparent;
 
-    background:red;
-    /* background:linear-gradient(135deg,#eef7fb,#a9cef9); */
+    background:linear-gradient(135deg,#eef7fb,#a9cef9);
 }
-
-/* ================= Scrollbar ================= */
 
 ::-webkit-scrollbar{
     width:8px;

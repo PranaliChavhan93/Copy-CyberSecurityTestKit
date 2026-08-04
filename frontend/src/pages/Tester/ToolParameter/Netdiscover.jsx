@@ -76,44 +76,42 @@ function Netdiscover() {
     };
 
     const downloadTxtFile = (content, filename) => {
-        if (!filename.endsWith('.txt')) {
-            filename = filename + '.txt';
-        }
+        // if (!filename.endsWith('.txt')) {
+        //     filename = filename + '.txt';
+        // }
 
-        const blob = new Blob([content], { type: 'text/plain' });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
+        // const blob = new Blob([content], { type: 'text/plain' });
+        // const url = window.URL.createObjectURL(blob);
+        // const link = document.createElement('a');
+        // link.href = url;
+        // link.download = filename;
+        // document.body.appendChild(link);
+        // link.click();
+        // document.body.removeChild(link);
+        // window.URL.revokeObjectURL(url);
     };
 
     const handlePassToAI = () => {
-        if (!output || output === "Waiting for execution...") {
-            alert("No output available! Please run the command first.");
-            return;
-        }
+        // if (!output || output === "Waiting for execution...") {
+        //     alert("No output available! Please run the command first.");
+        //     return;
+        // }
         setPopupType("ai");
         setShowPopup(true);
     };
 
     const handleDownload = () => {
-        if (!output || output === "Waiting for execution...") {
-            alert("No output available! Please run the command first.");
-            return;
-        }
+        // if (!output || output === "Waiting for execution...") {
+        //     alert("No output available! Please run the command first.");
+        //     return;
+        // }
         setPopupType("download");
         setShowPopup(true);
     };
 
     const handlePopupConfirm = () => {
         if (popupType === "ai") {
-            // Send to AI
             setAiFeedback("Output sent to AI for analysis!");
-            // Here you would call your AI API endpoint
             sendToAI(output);
             setTimeout(() => {
                 setShowPopup(false);
@@ -247,7 +245,6 @@ function Netdiscover() {
                 )}
             </div>
 
-            {/* Output Confirmation Popup - for AI and Download */}
             {showPopup && (
                 <div className="popup-overlay">
                     <div className="popup-box confirm-popup">
@@ -262,11 +259,6 @@ function Netdiscover() {
                             </p>
                         </div>
 
-                        <div className="popup-output-preview">
-                            <strong>Output Preview:</strong>
-                            <pre>{output ? output.substring(0, 300) + (output.length > 300 ? '...' : '') : 'No output available'}</pre>
-                        </div>
-
                         {popupType === 'download' && outputFile && (
                             <p className="popup-file-info">
                                 Filename: <strong>{outputFile.endsWith('.txt') ? outputFile : outputFile + '.txt'}</strong>
@@ -278,21 +270,16 @@ function Netdiscover() {
                                 className="popup-cancel-btn"
                                 onClick={handlePopupCancel}
                             >
-                                No, It's Wrong
+                                Cancle
                             </button>
                             <button 
                                 className="popup-confirm-btn"
                                 onClick={handlePopupConfirm}
                             >
-                                Yes, It's Right
+                                Conform
                             </button>
                         </div>
-
-                        {aiFeedback && (
-                            <div className="ai-feedback">
-                                {aiFeedback}
-                            </div>
-                        )}
+                        
                     </div>
                 </div>
             )}

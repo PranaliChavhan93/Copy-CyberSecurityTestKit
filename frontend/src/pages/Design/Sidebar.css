@@ -111,7 +111,6 @@
     color:white;
 }
 
-/* LOGOUT */
 .logout {
     margin-top:auto;
     padding:15px;
@@ -133,7 +132,6 @@
     background:#dc2626;
 }
 
-/* COLLAPSED LOGOUT */
 .sidebar.collapsed .logout {
     padding:10px;
 }
@@ -145,20 +143,4 @@
 .sidebar.collapsed .logout button::after {
     content:"⏻";
     font-size:20px;
-}
-
-/* MOBILE RESPONSIVE */
-@media(max-width:768px){
-    .sidebar {
-        width:75px;
-    }
-
-    .sidebar .menu-item span,
-    .logo h2 {
-        display:none;
-    }
-
-    .sidebar .menu-item {
-        justify-content:center;
-    }
 }

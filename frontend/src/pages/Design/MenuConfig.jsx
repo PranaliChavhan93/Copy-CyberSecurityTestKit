@@ -24,13 +24,13 @@ export const menuConfig = {
   ],
 
   TESTER : [
-    { label: "Dashboard", path : "/tester" },
-    { label: "Projects", path : "/tester/projects" },
-    { label: "Testing", path : "/tester/testing" },
-    { label: "Evidence", path : "/tester/evidence" },
-    { label: "Reports", path : "/tester/report" },
+      { label: "Dashboard", path : "/tester" },
+      { label: "Projects", path : "/tester/projects" },
+      { label: "Testing", path : "/tester/testing" },  // ← This shows the project list
+      { label: "Evidence", path : "/tester/evidence" },
+      { label: "Reports", path : "/tester/reports" },
   ],
-
+  
   TEST_MANAGER : [
     { label: "Dashboard", path : "/testmanager" },
     { label: "Projects", path : "/testmanager/projects" },

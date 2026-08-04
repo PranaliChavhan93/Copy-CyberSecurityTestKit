@@ -1474,3 +1474,11 @@ def parameter_list(request):
             many=True
         ).data
     )
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def evidence(request):
+    return Response({
+        "message": "Welcome to Evidence Management"
+    })
