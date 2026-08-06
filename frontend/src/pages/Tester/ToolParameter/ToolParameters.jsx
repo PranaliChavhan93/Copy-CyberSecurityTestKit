@@ -2,6 +2,7 @@ import AmassParameters from "./AmassParameters";
 import Netdiscover from "./Netdiscover";
 import ReconParameter from "./ReconParameter";
 import OwaspParameter from "./OwaspParameter";
+import NmapParameter from "./NmapParameter";
 
 function ToolParameters({ tool, parameters, setParameters }) {
     if(tool?.tool_name === "Amass")
@@ -29,6 +30,13 @@ function ToolParameters({ tool, parameters, setParameters }) {
     {
         return(
             <OwaspParameter />
+        )
+    }
+
+    if(tool?.tool_name === "Nmap")
+    {
+        return(
+            <NmapParameter />
         )
     }
 

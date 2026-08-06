@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Pencil, Trash2, X } from "lucide-react";
@@ -84,8 +85,8 @@ function UserView() {
     const updateUser = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem("access");
-            
+            const token = sessionStorage.getItem("access");
+           
             if (!token) {
                 toast.error("No authentication token found. Please login again.");
                 setLoading(false);
@@ -130,7 +131,7 @@ function UserView() {
     const updateCustomer = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem("access");
+            const token = sessionStorage.getItem("access");
             
             if (!token) {
                 toast.error("No authentication token found. Please login again.");
@@ -184,7 +185,7 @@ function UserView() {
 
         try {
             setLoading(true);
-            const token = localStorage.getItem("access");
+            const token = sessionStorage.getItem("access");
             
             if (!token) {
                 toast.error("No authentication token found. Please login again.");

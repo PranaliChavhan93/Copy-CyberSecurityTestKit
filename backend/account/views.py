@@ -1482,7 +1482,6 @@ def evidence(request):
     return Response({
         "message": "Welcome to Evidence Management"
     })
-=======
 
 # import base64
 # import io
@@ -4289,4 +4288,77 @@ def parameter_list(request):
             many=True
         ).data
     )
->>>>>>> eff5c6a274f92d83dd008233553af8e1f60487a8
+
+# @api_view(["POST"])
+# @permission_classes([AllowAny])
+# def run_command(request):
+#     try:
+#         command = request.data.get("command")
+        
+#         if not command:
+#             return Response({"output": "Error: No command provided."})
+
+#         full_command = command
+
+#         result = subprocess.run(
+#             full_command,
+#             shell=True,
+#             capture_output=True,
+#             text=True,
+#             timeout=60
+#         )
+
+#         # Combine stdout (the table of ports) and stderr (progress bars)
+#         output = result.stdout + result.stderr
+
+#         return Response({"output": output})
+
+#     except subprocess.TimeoutExpired:
+#         return Response({"output": "Error: Command timed out after 60 seconds."})
+#     except Exception as e:
+#         return Response({"output": f"Backend Error: {str(e)}"})
+
+import subprocess
+import platform
+import os
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def run_command(request):
+    try:
+        command = request.data.get("command")
+        
+        if not command:
+            return Response({"output": "Error: No command provided."})
+
+        current_os = platform.system()
+        full_command = command
+
+        if current_os == "Windows":
+            if command.strip().startswith("nmap"):
+                pass
+
+            if command.strip().startswith("sudo"):
+                full_command = command.replace("sudo", "").strip()
+
+        elif current_os == "Linux":
+            if command.strip().startswith("nmap"):
+                full_command = f"sudo -n {command}"
+
+        result = subprocess.run(
+            full_command,
+            shell=True,
+            capture_output=True,
+            text=True,
+            timeout=60
+        )
+
+        output = result.stdout + result.stderr
+
+        return Response({"output": output})
+
+    except subprocess.TimeoutExpired:
+        return Response({"output": "Error: Command timed out after 60 seconds."})
+    except Exception as e:
+        return Response({"output": f"Backend Error: {str(e)}"})
+

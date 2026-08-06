@@ -1,25 +1,16 @@
-
 import { useState, useRef, useEffect } from "react";
+import "./SaveOutput.css";
 
-function AmassParameters({ tool, parameters, setParameters }) {
-    const [commandType, setCommandType] = useState("enum");
-    const [mode, setMode] = useState("passive");
+function NmapParameters() {
     const [target, setTarget] = useState("");
-    const [optional, setOptional] = useState("");
+    const [scanOption, setScanOption] = useState("basic");
+    const [outputFile, setOutputFile] = useState("");
 
-    const [command, setCommand] = useState("");
     const [output, setOutput] = useState("");
-    const [isRunning, setIsRunning] = useState(false);
-    const [executionStatus, setExecutionStatus] = useState("waiting");
-
     const [showPopup, setShowPopup] = useState(false);
+    const [isExecuting, setIsExecuting] = useState(false);
     const [popupType, setPopupType] = useState("");
-    const [isAnalyzing, setIsAnalyzing] = useState(false);
-    const [outputFile, setOutputFile] = useState("amass_results.txt");
-    
-    const [showAnalysisPopup, setShowAnalysisPopup] = useState(false);
-    const [aiAnalysisResult, setAiAnalysisResult] = useState("");
-    const [isAnalysisLoading, setIsAnalysisLoading] = useState(false);
+    const [aiFeedback, setAiFeedback] = useState("");
 
     const terminalRef = useRef(null);
 
@@ -29,87 +20,100 @@ function AmassParameters({ tool, parameters, setParameters }) {
         }
     }, [output]);
 
-    useEffect(() => {
-        updateCommandPreview();
-    }, [commandType, mode, target, optional]);
-
     const generateCommand = () => {
-        let cmd = `amass ${commandType}`;
+        if (!target) return "nmap ";
 
-        if (mode && commandType !== "db") {
-            cmd += ` -${mode}`;
+        let cmd = "nmap";
+
+        switch (scanOption) {
+            case "basic":
+                break;
+            case "specific_ports":
+                cmd += " -p"; 
+                break;
+            case "syn":
+                cmd += " -sS";
+                break;
+            case "tcp_connect":
+                cmd += " -sT";
+                break;
+            case "version":
+                cmd += " -sV";
+                break;
+            case "os":
+                cmd += " -O";
+                break;
+            case "aggressive":
+                cmd += " -A";
+                break;
+            case "range":
+                break;
+            case "ping":
+                cmd += " -sn";
+                break;
+            case "udp":
+                cmd += " -sU";
+                break;
+            case "script":
+                cmd += " --script=vuln";
+                break;
+            case "verbose":
+                cmd += " -v";
+                break;
+            default:
+                break;
         }
-
-        if (target) {
-            cmd += ` -d ${target}`;
+        if (outputFile) {
+            const fileName = outputFile.endsWith('.txt') ? outputFile : `${outputFile}.txt`;
+            cmd += ` -oN ${fileName}`;
         }
-
-        if (optional) {
-            cmd += ` ${optional}`;
-        }
-
+        cmd += ` ${target}`;
         return cmd;
     };
-
-    const updateCommandPreview = () => {
-        const cmd = generateCommand();
-        setCommand(cmd);
-    };
-
+    
     const runCommand = async () => {
-        const cmd = generateCommand();
-        setIsRunning(true);
-        setExecutionStatus("running");
-        // setOutput(prev => prev + `\n$ ${cmd}\n`);
-        setOutput(prev => prev + `\n# ${cmd}\n`);
+        if (!target) {
+            setOutput("Error: Please enter a Target IP");
+            return;
+        }
 
+        setIsExecuting(true);
+        const cmd = generateCommand();
+        
+        setOutput(prev => prev + `\n# ${cmd}\n`);
 
         try {
             const response = await fetch("http://127.0.0.1:8000/tools/run/", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${sessionStorage.getItem("access")}`
-                },
-                body: JSON.stringify({
-                    command: cmd,
-                    tool_id: tool?.id || null,
-                    parameters: {
-                        commandType,
-                        mode,
-                        target,
-                        optional
-                    }
-                })
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ command: cmd })
             });
 
-            const data = await response.json();
+            const rawText = await response.text();
 
-            if (response.ok) {
-                setOutput(prev => prev + `${data.output || 'Command executed successfully'}\n`);
-                setExecutionStatus("success");
-            } else {
-                setOutput(prev => prev + `${data.message || 'Unknown error'}\n`);
-                setExecutionStatus("error");
+            let data;
+            try {
+                data = JSON.parse(rawText);
+                setOutput(prev => prev + data.output);
+            } catch (jsonError) {
+                setOutput(prev => prev);
             }
+
         } catch (error) {
-            setOutput(prev => prev + `${error.message}\n`);
-            setExecutionStatus("error");
+            setOutput(prev => prev + "\nNetwork Error : " + error.message);
         } finally {
-            setIsRunning(false);
+            setIsExecuting(false);
         }
     };
 
     const clearTerminal = () => {
         setOutput("");
-        setExecutionStatus("waiting");
     };
 
     const downloadTxtFile = (content, filename) => {
         if (!filename.endsWith('.txt')) {
             filename = filename + '.txt';
         }
-
         const blob = new Blob([content], { type: 'text/plain' });
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -121,72 +125,27 @@ function AmassParameters({ tool, parameters, setParameters }) {
         window.URL.revokeObjectURL(url);
     };
 
-    const sendToAI = async (content) => {
-        setIsAnalysisLoading(true);
-        setShowAnalysisPopup(true);
-        setAiAnalysisResult("");
-
-        try {
-            const response = await fetch("http://127.0.0.1:8000/ai/analyze/", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${sessionStorage.getItem("access")}`
-                },
-                body: JSON.stringify({
-                    output: content,
-                    tool_name: tool?.tool_name || "Amass",
-                    command: command
-                })
-            });
-
-            if (response.status === 401) {
-                sessionStorage.clear();
-                setAiAnalysisResult("No authentication token found. Please login again.");
-                setIsAnalysisLoading(false);
-                return;
-            }
-
-            const data = await response.json();
-            
-            if (data.success) {
-                setAiAnalysisResult(data.analysis);
-            } else {
-                setAiAnalysisResult(`AI Analysis failed: ${data.error || 'Unknown error'}`);
-            }
-        } catch (error) {
-            console.error("AI Error:", error);
-            setAiAnalysisResult(`Error connecting to AI service: ${error.message}`);
-        } finally {
-            setIsAnalysisLoading(false);
-        }
-    };
-
     const handlePassToAI = () => {
-        if (!output || output === "Waiting for execution...") {
-            alert("No output available! Please run the command first.");
-            return;
-        }
         setPopupType("ai");
         setShowPopup(true);
     };
 
     const handleDownload = () => {
-        if (!output || output === "Waiting for execution...") {
-            alert("No output available! Please run the command first.");
-            return;
-        }
         setPopupType("download");
         setShowPopup(true);
     };
 
-    const handlePopupConfirm = async () => {
+    const handlePopupConfirm = () => {
         if (popupType === "ai") {
-            setShowPopup(false);
-            setPopupType("");
-            await sendToAI(output);
+            setAiFeedback("Output sent to AI for analysis!");
+            sendToAI(output);
+            setTimeout(() => {
+                setShowPopup(false);
+                setAiFeedback("");
+                setPopupType("");
+            }, 2000);
         } else if (popupType === "download") {
-            downloadTxtFile(output, outputFile || "amass_results.txt");
+            downloadTxtFile(output, outputFile || "nmap_results.txt");
             setShowPopup(false);
             setPopupType("");
         }
@@ -195,80 +154,68 @@ function AmassParameters({ tool, parameters, setParameters }) {
     const handlePopupCancel = () => {
         setShowPopup(false);
         setPopupType("");
+        setAiFeedback("");
     };
 
-    const handleCloseAnalysisPopup = () => {
-        setShowAnalysisPopup(false);
-        setAiAnalysisResult("");
-    };
-
-    const saveParameters = () => {
-        if (setParameters) {
-            setParameters({
-                commandType,
-                mode,
-                target,
-                optional,
-                command,
-                output,
-                executionStatus
+    const sendToAI = async (content) => {
+        try {
+            const response = await fetch("http://127.0.0.1:8000/ai/analyze/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    output: content
+                })
             });
+            const data = await response.json();
+            console.log("AI Response:", data);
+        } catch (error) {
+            console.error("AI Error:", error);
         }
     };
 
     return (
         <div className="amass-box">
-            <h3>
-                Amass Configuration
-                {tool && <span className="tool-badge">{tool.tool_name}</span>}
-            </h3>
+            <h3>Nmap Configuration</h3>
 
             <div className="amass-form">
                 <div className="amass-field">
-                    <label>Command</label>
+                    <label>Scan Options</label>
                     <select
-                        value={commandType}
-                        onChange={(e) => setCommandType(e.target.value)}
+                        value={scanOption}
+                        onChange={e => setScanOption(e.target.value)}
                     >
-                        <option value="enum">Enumeration</option>
-                        <option value="intel">Intelligence</option>
-                        <option value="db">Database</option>
-                        <option value="viz">Visualization</option>
-                        <option value="track">Tracking</option>
+                        <option value="basic">Basic Scan</option>
+                        <option value="specific_ports">Scan Specific Ports (-p 21,22,80)</option>
+                        <option value="syn">SYN Stealth Scan (-sS)</option>
+                        <option value="tcp_connect">TCP Connect Scan (-sT)</option>
+                        <option value="version">Service Version Detection (-sV)</option>
+                        <option value="os">OS Detection (-O)</option>
+                        <option value="aggressive">Aggressive Scan (-A)</option>
+                        <option value="range">Network Range Scan</option>
+                        <option value="ping">Ping Scan (-sn)</option>
+                        <option value="udp">UDP Scan (-sU)</option>
+                        <option value="script">Script Scan (--script=vuln)</option>
+                        <option value="verbose">Verbose Mode (-v)</option>
                     </select>
                 </div>
 
                 <div className="amass-field">
-                    <label>Mode</label>
-                    <select
-                        value={mode}
-                        onChange={(e) => setMode(e.target.value)}
-                        disabled={commandType === "db"}
-                    >
-                        <option value="passive">Passive</option>
-                        <option value="active">Active</option>
-                        <option value="brute">Brute Force</option>
-                        <option value="alts">Alterations</option>
-                        <option value="ip">IP Resolve</option>
-                        <option value="whois">WHOIS</option>
-                    </select>
-                </div>
-
-                <div className="amass-field">
-                    <label>Domain / Target</label>
+                    <label>Target IP / Hostname / Range</label>
                     <input
-                        placeholder="example.com"
                         value={target}
-                        onChange={(e) => setTarget(e.target.value)}
+                        placeholder="192.168.1.1, example.org, 1 - 1000"
+                        onChange={e => setTarget(e.target.value)}
                     />
                 </div>
 
                 <div className="amass-field">
-                    <label>Optional Parameters</label>
+                    <label>Save Output to File (-oN)</label>
                     <input
-                        placeholder="-o output.txt"
-                        value={optional}
-                        onChange={(e) => setOptional(e.target.value)}
+                        placeholder="scan_results.txt"
+                        value={outputFile}
+                        onChange={e => setOutputFile(e.target.value)}
                     />
                 </div>
             </div>
@@ -276,23 +223,19 @@ function AmassParameters({ tool, parameters, setParameters }) {
             <div className="command-area">
                 <label>Generated Command</label>
                 <div className="command-preview">
-                    <span className="command-text">{command || "Command..."}</span>
+                    {generateCommand()}
                 </div>
                 <br />
-
                 <button
-                    className={`run-btn ${isRunning ? 'running' : ''}`}
+                    className="run-btn"
                     onClick={runCommand}
-                    disabled={isRunning || !command}
+                    // disabled={isExecuting || !target}
                 >
-                    {isRunning ? (
-                        <><i className="fas fa-spinner fa-spin"></i> Running...</>
-                    ) : (
-                        <><i className="fas fa-play"></i> Run Command</>
-                    )}
+                    {isExecuting ? 'Scanning...' : 'Run Nmap'}
                 </button>
 
-                {output && (
+                {/* Added Clear Button */}
+                {output && output !== "Waiting for execution..." && output !== "Error: Please enter a Target IP" && (
                     <button
                         className="run-btn"
                         style={{
@@ -302,7 +245,7 @@ function AmassParameters({ tool, parameters, setParameters }) {
                         }}
                         onClick={clearTerminal}
                     >
-                        <i className="fas fa-eraser"></i> Clear
+                        Clear
                     </button>
                 )}
             </div>
@@ -312,7 +255,6 @@ function AmassParameters({ tool, parameters, setParameters }) {
                 <div className="terminal" ref={terminalRef}>
                     <pre>
                         {output || "Waiting for execution..."}
-                        {isRunning && <span className="cursor"></span>}
                     </pre>
                 </div>
                 {output && output !== "Waiting for execution..." && (
@@ -321,38 +263,38 @@ function AmassParameters({ tool, parameters, setParameters }) {
                             className="pass-to-ai-btn"
                             onClick={handlePassToAI}
                         >
-                            <i className="fas fa-brain"></i> Pass Output to AI
+                            Pass Output to AI
                         </button>
                         <button 
                             className="download-btn"
                             onClick={handleDownload}
                         >
-                            <i className="fas fa-download"></i> Download TXT
+                            Download TXT
                         </button>
                     </div>
                 )}
             </div>
 
-            {/* Confirmation Popup */}
+            {/* Popup Component */}
             {showPopup && (
-                <div className="popup-overlay" onClick={handlePopupCancel}>
-                    <div className="popup-box confirm-popup" onClick={(e) => e.stopPropagation()}>
-                        <h3>
-                            {popupType === 'ai' ? (
-                                <><i className="fas fa-brain"></i> AI Analysis</>
-                            ) : (
-                                <><i className="fas fa-download"></i> Download File</>
-                            )}
-                        </h3>
+                <div className="popup-overlay">
+                    <div className="popup-box confirm-popup">
+                        <h3>{popupType === 'ai' ? 'Pass Output to AI' : '📥 Download TXT File'}</h3>
                         
                         <div className="popup-message">
                             <p>
                                 {popupType === 'ai' 
-                                    ? 'Do you want to send this output to AI for analysis?'
-                                    : 'Do you want to download this output as a .txt file?'
+                                    ? 'Do you confirm this output is correct and want to send it to AI for analysis?'
+                                    : 'Do you confirm this output is correct and want to download it as a .txt file?'
                                 }
                             </p>
                         </div>
+
+                        {popupType === 'download' && outputFile && (
+                            <p className="popup-file-info">
+                                Filename: <strong>{outputFile.endsWith('.txt') ? outputFile : outputFile + '.txt'}</strong>
+                            </p>
+                        )}
 
                         <div className="popup-buttons">
                             <button 
@@ -371,57 +313,8 @@ function AmassParameters({ tool, parameters, setParameters }) {
                     </div>
                 </div>
             )}
-
-            {/* AI Analysis Result Popup */}
-            {showAnalysisPopup && (
-                <div className="popup-overlay" onClick={handleCloseAnalysisPopup}>
-                    <div className="popup-box analysis-popup" onClick={(e) => e.stopPropagation()}>
-                        <div className="analysis-popup-header">
-                            <h3>
-                                <i className="fas fa-robot"></i> AI Analysis Result
-                            </h3>
-                            <button 
-                                className="close-popup-btn"
-                                onClick={handleCloseAnalysisPopup}
-                            >
-                                <i className="fas fa-times"></i>
-                            </button>
-                        </div>
-
-                        <div className="analysis-popup-body">
-                            {isAnalysisLoading ? (
-                                <div className="loading-container">
-                                    <div className="spinner"></div>
-                                    <p>Analyzing with AI...</p>
-                                    <p className="loading-subtext">This may take a few moments</p>
-                                </div>
-                            ) : aiAnalysisResult ? (
-                                <div className="analysis-content">
-                                    {aiAnalysisResult.split('\n').map((line, index) => (
-                                        <p key={index}>{line}</p>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="error-message">
-                                    <i className="fas fa-exclamation-circle"></i>
-                                    <p>No analysis result available</p>
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="analysis-popup-footer">
-                            <button 
-                                className="continue-btn"
-                                onClick={handleCloseAnalysisPopup}
-                                disabled={isAnalysisLoading}
-                            >
-                                <i className="fas fa-check"></i> Continue
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
+            
+        
             <style jsx>{`
                 .action-buttons {
                     display: flex;
@@ -798,4 +691,4 @@ function AmassParameters({ tool, parameters, setParameters }) {
     );
 }
 
-export default AmassParameters;
+export default NmapParameters;

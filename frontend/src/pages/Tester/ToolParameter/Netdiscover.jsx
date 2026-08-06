@@ -11,7 +11,7 @@ function Netdiscover() {
     const [output, setOutput] = useState("");
     const [showPopup, setShowPopup] = useState(false);
     const [isExecuting, setIsExecuting] = useState(false);
-    const [popupType, setPopupType] = useState(""); // "ai" or "download"
+    const [popupType, setPopupType] = useState("");
     const [aiFeedback, setAiFeedback] = useState("");
 
     const generateCommand = () => {
@@ -56,12 +56,9 @@ function Netdiscover() {
 
             const data = await response.json();
 
-            setOutput(
-                prev =>
-                prev +
-                "\n" +
-                data.output
-            );
+            // setOutput(prev => prev +"\n"+data.output);
+            setOutput(prev => prev + `\n# ${cmd}\n`);
+
 
         } catch (error) {
             setOutput(
@@ -76,35 +73,35 @@ function Netdiscover() {
     };
 
     const downloadTxtFile = (content, filename) => {
-        // if (!filename.endsWith('.txt')) {
-        //     filename = filename + '.txt';
-        // }
+        if (!filename.endsWith('.txt')) {
+            filename = filename + '.txt';
+        }
 
-        // const blob = new Blob([content], { type: 'text/plain' });
-        // const url = window.URL.createObjectURL(blob);
-        // const link = document.createElement('a');
-        // link.href = url;
-        // link.download = filename;
-        // document.body.appendChild(link);
-        // link.click();
-        // document.body.removeChild(link);
-        // window.URL.revokeObjectURL(url);
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
     };
 
     const handlePassToAI = () => {
-        // if (!output || output === "Waiting for execution...") {
-        //     alert("No output available! Please run the command first.");
-        //     return;
-        // }
+        if (!output || output === "Waiting for execution...") {
+            alert("No output available! Please run the command first.");
+            return;
+        }
         setPopupType("ai");
         setShowPopup(true);
     };
 
     const handleDownload = () => {
-        // if (!output || output === "Waiting for execution...") {
-        //     alert("No output available! Please run the command first.");
-        //     return;
-        // }
+        if (!output || output === "Waiting for execution...") {
+            alert("No output available! Please run the command first.");
+            return;
+        }
         setPopupType("download");
         setShowPopup(true);
     };

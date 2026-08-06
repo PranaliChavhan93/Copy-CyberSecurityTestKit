@@ -190,6 +190,7 @@ from account.views import (
     protocol_details,
     protocols_by_category,
     run_amass,
+    run_command,
     save_output,
     standard_rfc,
     tester_list,
@@ -332,6 +333,7 @@ urlpatterns = [
     
     path("tools/amass/", run_amass),
     path("tester/tool-parameters/", parameter_list),
+    path('tools/run/', run_command),
 
     path('customer/', customer_dashboard),
     path("customers/", customer_view),
