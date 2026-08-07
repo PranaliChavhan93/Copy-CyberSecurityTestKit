@@ -244,6 +244,7 @@ from account.views import (
     admin_dashboard,
     customer_dashboard,
     tester_project_detail,
+    ai_analyze,
 )
 
 from rest_framework_simplejwt.views import (
@@ -334,6 +335,7 @@ urlpatterns = [
     path("tools/amass/", run_amass),
     path("tester/tool-parameters/", parameter_list),
     path('tools/run/', run_command),
+    path('ai/analyze/', ai_analyze),
 
     path('customer/', customer_dashboard),
     path("customers/", customer_view),

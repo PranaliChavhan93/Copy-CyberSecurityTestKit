@@ -85,8 +85,7 @@ function Testing() {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
-            }
-        )
+            })
             .then((res) => res.json())
             .then((data) => {
                 if (Array.isArray(data)) {
@@ -131,8 +130,7 @@ function Testing() {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
-            }
-        )
+            })
             .then((res) => res.json())
             .then((data) => {
                 if (Array.isArray(data)) {
@@ -202,6 +200,26 @@ function Testing() {
     const handleBackToProjects = () => {
         navigate('/tester/testing');
     };
+
+    const advanceStage = () => {
+        const current = stages.find((s) => s.id === stage);
+        if (!current) return;
+
+        const ordered = [...stages].sort(
+            (prev, next) => (prev.stage_order ?? 0) - (next.stage_order ?? 0)
+        );
+        const currentIndex = ordered.findIndex((s) => s.id === current.id);
+
+        if (currentIndex === -1 || currentIndex === ordered.length - 1) {
+            return;
+        }
+
+        const next = ordered[currentIndex + 1];
+        setStage(next.id);
+        updateStage(next.stage_id);
+    };
+
+    const currentStageCode = stages.find((prev) => prev.id === stage)?.stage_id;
 
     return (
         <div className="testing-page">
@@ -347,6 +365,8 @@ function Testing() {
                     tool={tool}
                     parameters={parameters}
                     setParameters={setParameters}
+                    stageCode={currentStageCode}
+                    onAdvanceStage={advanceStage}
                 />
             )}
         </div>

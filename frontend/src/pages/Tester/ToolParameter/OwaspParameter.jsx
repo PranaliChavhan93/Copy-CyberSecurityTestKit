@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect } from "react";
+import AIAnalysisPanel from "./AIAnalysisPanel";
 
-function OwaspParameter({ tool, parameters, setParameters }) {
+function OwaspParameter({ tool, parameters, setParameters, stageCode, onAdvanceStage }) {
     const [zapMode, setZapMode] = useState("cmd");
     const [targetUrl, setTargetUrl] = useState("");
     const [outputFile, setOutputFile] = useState("zap_results.txt");
     const [optionalParams, setOptionalParams] = useState("");
     const [configParams, setConfigParams] = useState("");
-    
     // ZAP specific options
     const [scanType, setScanType] = useState("quick");
     const [addonAction, setAddonAction] = useState("install");
@@ -21,7 +21,6 @@ function OwaspParameter({ tool, parameters, setParameters }) {
 
     const [showPopup, setShowPopup] = useState(false);
     const [popupType, setPopupType] = useState("");
-    const [aiFeedback, setAiFeedback] = useState("");
 
     const terminalRef = useRef(null);
 
@@ -183,38 +182,6 @@ function OwaspParameter({ tool, parameters, setParameters }) {
         window.URL.revokeObjectURL(url);
     };
 
-    const sendToAI = async (content) => {
-        try {
-            const response = await fetch("http://127.0.0.1:8000/ai/analyze/", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${sessionStorage.getItem("access")}`
-                },
-                body: JSON.stringify({
-                    output: content,
-                    tool_name: tool?.tool_name || "OWASP ZAP"
-                })
-            });
-            const data = await response.json();
-            console.log("AI Response:", data);
-            
-            setOutput(prev => prev + `${data.analysis || 'Analysis complete'}\n`);
-        } catch (error) {
-            console.error("AI Error:", error);
-            setOutput(prev => prev + `${error.message}\n`);
-        }
-    };
-
-    const handlePassToAI = () => {
-        if (!output || output === "Waiting for execution...") {
-            alert("No output available! Please run the command first.");
-            return;
-        }
-        setPopupType("ai");
-        setShowPopup(true);
-    };
-
     const handleDownload = () => {
         if (!output || output === "Waiting for execution...") {
             alert("No output available! Please run the command first.");
@@ -225,21 +192,14 @@ function OwaspParameter({ tool, parameters, setParameters }) {
     };
 
     const handlePopupConfirm = () => {
-        if (popupType === "ai") {
-            sendToAI(output);
-            setShowPopup(false);
-            setPopupType("");
-        } else if (popupType === "download") {
-            downloadTxtFile(output, outputFile || "zap_results.txt");
-            setShowPopup(false);
-            setPopupType("");
-        }
+        downloadTxtFile(output, outputFile || "zap_results.txt");
+        setShowPopup(false);
+        setPopupType("");
     };
 
     const handlePopupCancel = () => {
         setShowPopup(false);
         setPopupType("");
-        setAiFeedback("");
     };
 
     const saveParameters = () => {
@@ -445,12 +405,12 @@ function OwaspParameter({ tool, parameters, setParameters }) {
                     output !== 
                     "Waiting for execution..." && (
                     <div className="action-buttons">
-                        <button 
-                            className="pass-to-ai-btn"
-                            onClick={handlePassToAI}
-                        >
-                            Pass Output to AI
-                        </button>
+                        <AIAnalysisPanel
+                            output={output}
+                            toolName={tool?.tool_name || "OWASP ZAP"}
+                            stageCode={stageCode}
+                            onAdvanceStage={onAdvanceStage}
+                        />
                         <button 
                             className="download-btn"
                             onClick={handleDownload}
@@ -464,18 +424,13 @@ function OwaspParameter({ tool, parameters, setParameters }) {
             {showPopup && (
                 <div className="popup-overlay">
                     <div className="popup-box confirm-popup">
-                        <h3>{popupType === 'ai' ? 'Pass Output to AI' : '📥 Download TXT File'}</h3>
+                        <h3>📥 Download TXT File</h3>
                         
                         <div className="popup-message">
-                            <p>
-                                {popupType === 'ai' 
-                                    ? 'Do you confirm this output is correct and want to send it to AI for analysis?'
-                                    : 'Do you confirm this output is correct and want to download it as a .txt file?'
-                                }
-                            </p>
+                            <p>Do you confirm this output is correct and want to download it as a .txt file?</p>
                         </div>
 
-                        {popupType === 'download' && (
+                        {outputFile && (
                             <p className="popup-file-info">
                                 Filename: <strong>{outputFile.endsWith('.txt') ? outputFile : outputFile + '.txt'}</strong>
                             </p>

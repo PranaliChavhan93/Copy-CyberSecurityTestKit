@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
+import AIAnalysisPanel from "./AIAnalysisPanel";
 
-function ReconParameters({ tool, parameters, setParameters }) {
+function ReconParameters({ tool, parameters, setParameters, stageCode, onAdvanceStage }) {
 
     const [toolType, setToolType] = useState("recon-cli");
 
@@ -270,55 +271,6 @@ function ReconParameters({ tool, parameters, setParameters }) {
 
     };
 
-    const sendToAI = async (content) => {
-
-        try {
-
-            const response = await fetch(
-                "http://127.0.0.1:8000/ai/analyze/",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${sessionStorage.getItem("access")}`
-                    },
-                    body: JSON.stringify({
-                        output: content,
-                        tool_name: tool?.tool_name || "Recon-ng"
-                    })
-                }
-            );
-
-            const data = await response.json();
-
-            setOutput(prev =>
-                prev +
-                `\n--- AI Analysis ---\n${data.analysis}\n`
-            );
-
-        } catch (err) {
-
-            setOutput(prev =>
-                prev +
-                `\nAI Error : ${err.message}\n`
-            );
-
-        }
-
-    };
-
-    const handlePassToAI = () => {
-
-        if (!output || output === "Waiting for execution...") {
-            alert("Run command first.");
-            return;
-        }
-
-        setPopupType("ai");
-        setShowPopup(true);
-
-    };
-
     const handleDownload = () => {
 
         if (!output || output === "Waiting for execution...") {
@@ -333,18 +285,10 @@ function ReconParameters({ tool, parameters, setParameters }) {
 
     const handlePopupConfirm = () => {
 
-        if (popupType === "ai") {
-
-            sendToAI(output);
-
-        } else {
-
-            downloadTxtFile(
-                output,
-                outputFile
-            );
-
-        }
+        downloadTxtFile(
+            output,
+            outputFile
+        );
 
         setShowPopup(false);
 
@@ -753,12 +697,12 @@ function ReconParameters({ tool, parameters, setParameters }) {
 
                         <div className="action-buttons">
 
-                            <button
-                                className="pass-to-ai-btn"
-                                onClick={handlePassToAI}
-                            >
-                                Pass Output to AI
-                            </button>
+                            <AIAnalysisPanel
+                                output={output}
+                                toolName={tool?.tool_name || "Recon-ng"}
+                                stageCode={stageCode}
+                                onAdvanceStage={onAdvanceStage}
+                            />
 
                             <button
                                 className="download-btn"
@@ -773,17 +717,9 @@ function ReconParameters({ tool, parameters, setParameters }) {
             {showPopup && (
                 <div className="popup-overlay">
                     <div className="popup-box confirm-popup">
-                        <h3>
-                            {popupType === "ai"
-                                ? "Pass Output to AI"
-                                : "Download TXT"}
-                        </h3>
+                        <h3>Download TXT</h3>
 
-                        <p>
-                            {popupType === "ai"
-                                ? "Send output to AI for analysis?"
-                                : "Download output as TXT file?"}
-                        </p>
+                        <p>Download output as TXT file?</p>
 
                         <div className="popup-buttons">
                             <button

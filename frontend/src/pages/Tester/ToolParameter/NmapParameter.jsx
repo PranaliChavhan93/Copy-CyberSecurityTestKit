@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import "./SaveOutput.css";
+import AIAnalysisPanel from "./AIAnalysisPanel";
 
-function NmapParameters() {
+function NmapParameters({ tool, stageCode, onAdvanceStage }) {
     const [target, setTarget] = useState("");
     const [scanOption, setScanOption] = useState("basic");
     const [outputFile, setOutputFile] = useState("");
@@ -10,7 +11,6 @@ function NmapParameters() {
     const [showPopup, setShowPopup] = useState(false);
     const [isExecuting, setIsExecuting] = useState(false);
     const [popupType, setPopupType] = useState("");
-    const [aiFeedback, setAiFeedback] = useState("");
 
     const terminalRef = useRef(null);
 
@@ -125,54 +125,20 @@ function NmapParameters() {
         window.URL.revokeObjectURL(url);
     };
 
-    const handlePassToAI = () => {
-        setPopupType("ai");
-        setShowPopup(true);
-    };
-
     const handleDownload = () => {
         setPopupType("download");
         setShowPopup(true);
     };
 
     const handlePopupConfirm = () => {
-        if (popupType === "ai") {
-            setAiFeedback("Output sent to AI for analysis!");
-            sendToAI(output);
-            setTimeout(() => {
-                setShowPopup(false);
-                setAiFeedback("");
-                setPopupType("");
-            }, 2000);
-        } else if (popupType === "download") {
-            downloadTxtFile(output, outputFile || "nmap_results.txt");
-            setShowPopup(false);
-            setPopupType("");
-        }
+        downloadTxtFile(output, outputFile || "nmap_results.txt");
+        setShowPopup(false);
+        setPopupType("");
     };
 
     const handlePopupCancel = () => {
         setShowPopup(false);
         setPopupType("");
-        setAiFeedback("");
-    };
-
-    const sendToAI = async (content) => {
-        try {
-            const response = await fetch("http://127.0.0.1:8000/ai/analyze/", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    output: content
-                })
-            });
-            const data = await response.json();
-            console.log("AI Response:", data);
-        } catch (error) {
-            console.error("AI Error:", error);
-        }
     };
 
     return (
@@ -259,12 +225,12 @@ function NmapParameters() {
                 </div>
                 {output && output !== "Waiting for execution..." && (
                     <div className="action-buttons">
-                        <button 
-                            className="pass-to-ai-btn"
-                            onClick={handlePassToAI}
-                        >
-                            Pass Output to AI
-                        </button>
+                        <AIAnalysisPanel
+                            output={output}
+                            toolName={tool?.tool_name || "Nmap"}
+                            stageCode={stageCode}
+                            onAdvanceStage={onAdvanceStage}
+                        />
                         <button 
                             className="download-btn"
                             onClick={handleDownload}
@@ -279,18 +245,13 @@ function NmapParameters() {
             {showPopup && (
                 <div className="popup-overlay">
                     <div className="popup-box confirm-popup">
-                        <h3>{popupType === 'ai' ? 'Pass Output to AI' : '📥 Download TXT File'}</h3>
+                        <h3>📥 Download TXT File</h3>
                         
                         <div className="popup-message">
-                            <p>
-                                {popupType === 'ai' 
-                                    ? 'Do you confirm this output is correct and want to send it to AI for analysis?'
-                                    : 'Do you confirm this output is correct and want to download it as a .txt file?'
-                                }
-                            </p>
+                            <p>Do you confirm this output is correct and want to download it as a .txt file?</p>
                         </div>
 
-                        {popupType === 'download' && outputFile && (
+                        {outputFile && (
                             <p className="popup-file-info">
                                 Filename: <strong>{outputFile.endsWith('.txt') ? outputFile : outputFile + '.txt'}</strong>
                             </p>

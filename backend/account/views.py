@@ -4362,3 +4362,44 @@ def run_command(request):
     except Exception as e:
         return Response({"output": f"Backend Error: {str(e)}"})
 
+
+from account.ai_advisor.engine import analyze as ai_analyze_output
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def ai_analyze(request):
+    try:
+        output = request.data.get("output", "")
+        tool_name = request.data.get("tool_name", "")
+        stage_code = request.data.get("stage")  # INFO / SCAN / VULN / EXPLOIT / POST
+
+        if not output or not output.strip():
+            return Response({
+                "success": False,
+                "error": "No output provided to analyze."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        result = ai_analyze_output(
+            tool_name=tool_name,
+            raw_text=output,
+            stage_code=stage_code,
+        )
+
+        return Response({
+            "success": True,
+            "analysis": result["narrative"],
+            "summary_points": result["summary_points"],
+            "data": result["data"],
+            "stage_id": result["stage_id"],
+            "stage_code": result["stage_code"],
+            "stage_name": result["stage_name"],
+            "stage_complete": result["stage_complete"],
+            "completeness_reason": result["completeness_reason"],
+        })
+
+    except Exception as e:
+        return Response({
+            "success": False,
+            "error": str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -2594,9 +2594,9 @@ def tools(sender, **kwargs):
         ("r2frida", "MOBILE", "Post-Exploitation", "SOFTWARE"),
 
         # NETWORK TESTING
-        ("Netdiscover", "NETWORK", "Scanning & Enumeration", "SOFTWARE"),
-        ("theHarvester", "NETWORK", "Scanning & Enumeration", "SOFTWARE"),
-        ("Wireshark", "NETWORK", "Scanning & Enumeration", "SOFTWARE"),
+        ("Netdiscover", "NETWORK", "Information Gathering", "SOFTWARE"),
+        ("theHarvester", "NETWORK", "Information Gathering", "SOFTWARE"),
+        ("Wireshark", "NETWORK", "Information Gathering", "SOFTWARE"),
         ("Wi‑Fi Adapter", "NETWORK", "Information Gathering", "HARDWARE"),
         ("Raspberry Pi", "NETWORK", "Information Gathering", "HARDWARE"),
 
@@ -2684,7 +2684,6 @@ def tools(sender, **kwargs):
         ("strace", "THICK", "Vulnerability Assessment", "SOFTWARE"),
         ("ltrace", "THICK", "Vulnerability Assessment", "SOFTWARE"),
         ("sysdig", "THICK", "Vulnerability Assessment", "SOFTWARE"),
-
         ("Cutter", "THICK", "Vulnerability Assessment", "SOFTWARE"),
 
         ("radare2", "THICK", "Exploitation", "SOFTWARE"),
@@ -2697,7 +2696,6 @@ def tools(sender, **kwargs):
         ("Netcat", "THICK", "Post-Exploitation", "SOFTWARE"),
 
         # RADIO / WIRELESS TESTING
-        
         ("Kismet", "RADIO", "Information Gathering", "SOFTWARE"),
         ("Aircrack-ng", "RADIO", "Information Gathering", "SOFTWARE"),
         ("Airodump-ng", "RADIO", "Information Gathering", "SOFTWARE"),

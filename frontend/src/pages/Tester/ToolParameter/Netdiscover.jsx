@@ -1,8 +1,9 @@
 
 import { useState } from "react";
 import "./SaveOutput.css";
+import AIAnalysisPanel from "./AIAnalysisPanel";
 
-function Netdiscover() {
+function Netdiscover({ tool, stageCode, onAdvanceStage }) {
     const [interfaceName, setInterfaceName] = useState("eth0");
     const [range, setRange] = useState("");
     const [mode, setMode] = useState("");
@@ -12,7 +13,6 @@ function Netdiscover() {
     const [showPopup, setShowPopup] = useState(false);
     const [isExecuting, setIsExecuting] = useState(false);
     const [popupType, setPopupType] = useState("");
-    const [aiFeedback, setAiFeedback] = useState("");
 
     const generateCommand = () => {
         let cmd = "sudo netdiscover";
@@ -88,15 +88,6 @@ function Netdiscover() {
         window.URL.revokeObjectURL(url);
     };
 
-    const handlePassToAI = () => {
-        if (!output || output === "Waiting for execution...") {
-            alert("No output available! Please run the command first.");
-            return;
-        }
-        setPopupType("ai");
-        setShowPopup(true);
-    };
-
     const handleDownload = () => {
         if (!output || output === "Waiting for execution...") {
             alert("No output available! Please run the command first.");
@@ -107,16 +98,7 @@ function Netdiscover() {
     };
 
     const handlePopupConfirm = () => {
-        if (popupType === "ai") {
-            setAiFeedback("Output sent to AI for analysis!");
-            sendToAI(output);
-            setTimeout(() => {
-                setShowPopup(false);
-                setAiFeedback("");
-                setPopupType("");
-            }, 2000);
-        } else if (popupType === "download") {
-            // Download the file
+        if (popupType === "download") {
             downloadTxtFile(output, outputFile || "netdiscover_results.txt");
             setShowPopup(false);
             setPopupType("");
@@ -126,25 +108,6 @@ function Netdiscover() {
     const handlePopupCancel = () => {
         setShowPopup(false);
         setPopupType("");
-        setAiFeedback("");
-    };
-
-    const sendToAI = async (content) => {
-        try {
-            const response = await fetch("http://127.0.0.1:8000/ai/analyze/", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    output: content
-                })
-            });
-            const data = await response.json();
-            console.log("AI Response:", data);
-        } catch (error) {
-            console.error("AI Error:", error);
-        }
     };
 
     return (
@@ -226,12 +189,12 @@ function Netdiscover() {
                 </div>
                 {output && output !== "Waiting for execution..." && (
                     <div className="action-buttons">
-                        <button 
-                            className="pass-to-ai-btn"
-                            onClick={handlePassToAI}
-                        >
-                            Pass Output to AI
-                        </button>
+                        <AIAnalysisPanel
+                            output={output}
+                            toolName={tool?.tool_name || "Sublist3r"}
+                            stageCode={stageCode}
+                            onAdvanceStage={onAdvanceStage}
+                        />
                         <button 
                             className="download-btn"
                             onClick={handleDownload}
@@ -245,15 +208,10 @@ function Netdiscover() {
             {showPopup && (
                 <div className="popup-overlay">
                     <div className="popup-box confirm-popup">
-                        <h3>{popupType === 'ai' ? 'Pass Output to AI' : '📥 Download TXT File'}</h3>
+                        <h3>📥 Download TXT File</h3>
                         
                         <div className="popup-message">
-                            <p>
-                                {popupType === 'ai' 
-                                    ? 'Do you confirm this output is correct and want to send it to AI for analysis?'
-                                    : 'Do you confirm this output is correct and want to download it as a .txt file?'
-                                }
-                            </p>
+                            <p>Do you confirm this output is correct and want to download it as a .txt file?</p>
                         </div>
 
                         {popupType === 'download' && outputFile && (

@@ -1,7 +1,8 @@
 
 import { useState, useRef, useEffect } from "react";
+import AIAnalysisPanel from "./AIAnalysisPanel";
 
-function AmassParameters({ tool, parameters, setParameters }) {
+function AmassParameters({ tool, parameters, setParameters, stageCode, onAdvanceStage }) {
     const [commandType, setCommandType] = useState("enum");
     const [mode, setMode] = useState("passive");
     const [target, setTarget] = useState("");
@@ -16,10 +17,6 @@ function AmassParameters({ tool, parameters, setParameters }) {
     const [popupType, setPopupType] = useState("");
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [outputFile, setOutputFile] = useState("amass_results.txt");
-    
-    const [showAnalysisPopup, setShowAnalysisPopup] = useState(false);
-    const [aiAnalysisResult, setAiAnalysisResult] = useState("");
-    const [isAnalysisLoading, setIsAnalysisLoading] = useState(false);
 
     const terminalRef = useRef(null);
 
@@ -121,56 +118,6 @@ function AmassParameters({ tool, parameters, setParameters }) {
         window.URL.revokeObjectURL(url);
     };
 
-    const sendToAI = async (content) => {
-        setIsAnalysisLoading(true);
-        setShowAnalysisPopup(true);
-        setAiAnalysisResult("");
-
-        try {
-            const response = await fetch("http://127.0.0.1:8000/ai/analyze/", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${sessionStorage.getItem("access")}`
-                },
-                body: JSON.stringify({
-                    output: content,
-                    tool_name: tool?.tool_name || "Amass",
-                    command: command
-                })
-            });
-
-            if (response.status === 401) {
-                sessionStorage.clear();
-                setAiAnalysisResult("No authentication token found. Please login again.");
-                setIsAnalysisLoading(false);
-                return;
-            }
-
-            const data = await response.json();
-            
-            if (data.success) {
-                setAiAnalysisResult(data.analysis);
-            } else {
-                setAiAnalysisResult(`AI Analysis failed: ${data.error || 'Unknown error'}`);
-            }
-        } catch (error) {
-            console.error("AI Error:", error);
-            setAiAnalysisResult(`Error connecting to AI service: ${error.message}`);
-        } finally {
-            setIsAnalysisLoading(false);
-        }
-    };
-
-    const handlePassToAI = () => {
-        if (!output || output === "Waiting for execution...") {
-            alert("No output available! Please run the command first.");
-            return;
-        }
-        setPopupType("ai");
-        setShowPopup(true);
-    };
-
     const handleDownload = () => {
         if (!output || output === "Waiting for execution...") {
             alert("No output available! Please run the command first.");
@@ -181,11 +128,7 @@ function AmassParameters({ tool, parameters, setParameters }) {
     };
 
     const handlePopupConfirm = async () => {
-        if (popupType === "ai") {
-            setShowPopup(false);
-            setPopupType("");
-            await sendToAI(output);
-        } else if (popupType === "download") {
+        if (popupType === "download") {
             downloadTxtFile(output, outputFile || "amass_results.txt");
             setShowPopup(false);
             setPopupType("");
@@ -195,11 +138,6 @@ function AmassParameters({ tool, parameters, setParameters }) {
     const handlePopupCancel = () => {
         setShowPopup(false);
         setPopupType("");
-    };
-
-    const handleCloseAnalysisPopup = () => {
-        setShowAnalysisPopup(false);
-        setAiAnalysisResult("");
     };
 
     const saveParameters = () => {
@@ -317,12 +255,12 @@ function AmassParameters({ tool, parameters, setParameters }) {
                 </div>
                 {output && output !== "Waiting for execution..." && (
                     <div className="action-buttons">
-                        <button 
-                            className="pass-to-ai-btn"
-                            onClick={handlePassToAI}
-                        >
-                            <i className="fas fa-brain"></i> Pass Output to AI
-                        </button>
+                        <AIAnalysisPanel
+                            output={output}
+                            toolName={tool?.tool_name || "Amass"}
+                            stageCode={stageCode}
+                            onAdvanceStage={onAdvanceStage}
+                        />
                         <button 
                             className="download-btn"
                             onClick={handleDownload}
@@ -333,25 +271,14 @@ function AmassParameters({ tool, parameters, setParameters }) {
                 )}
             </div>
 
-            {/* Confirmation Popup */}
+            {/* Confirmation Popup (download only) */}
             {showPopup && (
                 <div className="popup-overlay" onClick={handlePopupCancel}>
                     <div className="popup-box confirm-popup" onClick={(e) => e.stopPropagation()}>
-                        <h3>
-                            {popupType === 'ai' ? (
-                                <><i className="fas fa-brain"></i> AI Analysis</>
-                            ) : (
-                                <><i className="fas fa-download"></i> Download File</>
-                            )}
-                        </h3>
+                        <h3><i className="fas fa-download"></i> Download File</h3>
                         
                         <div className="popup-message">
-                            <p>
-                                {popupType === 'ai' 
-                                    ? 'Do you want to send this output to AI for analysis?'
-                                    : 'Do you want to download this output as a .txt file?'
-                                }
-                            </p>
+                            <p>Do you want to download this output as a .txt file?</p>
                         </div>
 
                         <div className="popup-buttons">
@@ -366,56 +293,6 @@ function AmassParameters({ tool, parameters, setParameters }) {
                                 onClick={handlePopupConfirm}
                             >
                                 Confirm
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* AI Analysis Result Popup */}
-            {showAnalysisPopup && (
-                <div className="popup-overlay" onClick={handleCloseAnalysisPopup}>
-                    <div className="popup-box analysis-popup" onClick={(e) => e.stopPropagation()}>
-                        <div className="analysis-popup-header">
-                            <h3>
-                                <i className="fas fa-robot"></i> AI Analysis Result
-                            </h3>
-                            <button 
-                                className="close-popup-btn"
-                                onClick={handleCloseAnalysisPopup}
-                            >
-                                <i className="fas fa-times"></i>
-                            </button>
-                        </div>
-
-                        <div className="analysis-popup-body">
-                            {isAnalysisLoading ? (
-                                <div className="loading-container">
-                                    <div className="spinner"></div>
-                                    <p>Analyzing with AI...</p>
-                                    <p className="loading-subtext">This may take a few moments</p>
-                                </div>
-                            ) : aiAnalysisResult ? (
-                                <div className="analysis-content">
-                                    {aiAnalysisResult.split('\n').map((line, index) => (
-                                        <p key={index}>{line}</p>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="error-message">
-                                    <i className="fas fa-exclamation-circle"></i>
-                                    <p>No analysis result available</p>
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="analysis-popup-footer">
-                            <button 
-                                className="continue-btn"
-                                onClick={handleCloseAnalysisPopup}
-                                disabled={isAnalysisLoading}
-                            >
-                                <i className="fas fa-check"></i> Continue
                             </button>
                         </div>
                     </div>
