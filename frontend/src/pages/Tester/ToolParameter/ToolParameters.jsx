@@ -1,8 +1,9 @@
-import AmassParameters from "./AmassParameters";
+import AmassParameters from "./Amass";
 import Netdiscover from "./Netdiscover";
-import ReconParameter from "./ReconParameter";
-import OwaspParameter from "./OwaspParameter";
-import NmapParameter from "./NmapParameter";
+import ReconParameter from "./Recon";
+import OwaspParameter from "./Owasp";
+import NmapParameter from "./Nmap";
+import Burpsuite from "./Burpsuite";
 
 function ToolParameters({ tool, parameters, setParameters, stageCode, onAdvanceStage }) {
     if(tool?.tool_name === "Amass")
@@ -55,6 +56,17 @@ function ToolParameters({ tool, parameters, setParameters, stageCode, onAdvanceS
     {
         return(
             <NmapParameter
+                tool={tool}
+                stageCode={stageCode}
+                onAdvanceStage={onAdvanceStage}
+            />
+        )
+    }
+
+    if(tool?.tool_name === "Burp Suite Community Edition")
+    {
+        return(
+            <BurpsuiteParameter
                 tool={tool}
                 stageCode={stageCode}
                 onAdvanceStage={onAdvanceStage}

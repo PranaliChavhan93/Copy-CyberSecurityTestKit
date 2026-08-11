@@ -1350,7 +1350,65 @@ def customer_creation(request):
             "last_name"
         )
     )
+    return Response(data)
 
+@api_view(["GET"])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def customer_projects(request):
+    
+    if request.user.role != "CUSTOMER":
+        return Response(
+            {"error": "Access Denied. Customer access required."},
+            status=403
+        )
+    
+    projects = Project.objects.filter(
+        customer=request.user
+    ).select_related(
+        "customer",
+        "manager"
+    )
+    
+    data = []
+    for project in projects:
+        data.append({
+            "project_id": project.project_id,
+            "project_name": project.project_name,
+            "project_type": project.project_type,
+            "project_desc": project.project_desc,
+            "priority": project.priority,
+            "status": project.status,
+            "start_date": project.start_date,
+            "deadline": project.deadline,
+            "progress": project.progress,
+            "current_stage": project.current_stage,
+
+            "manager": {
+                "id": project.manager.id 
+                    if 
+                        project.manager 
+                    else 
+                        None,
+                "name": 
+                    f"{project.manager.first_name} {project.manager.last_name}" 
+                    if 
+                        project.manager 
+                    else 
+                    "Not Assigned",
+                "email": project.manager.email if project.manager else None
+            } if project.manager else None,
+
+            "customer": {
+                "id": project.customer.id,
+                "organization": project.customer.organization,
+                "email": project.customer.email
+            } if project.customer else None,
+            "reports": {
+                "status": "PENDING"
+            }
+        })
+    
     return Response(data)
 
 @api_view(["POST"])
@@ -3311,6 +3369,42 @@ def project_creation(request):
             "error": str(e)
         }, status=400)
 
+# In your views.py
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.response import Response
+from .models import Suites
+
+@api_view(['GET'])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def get_suites(request):
+    try:
+        suites = Suites.objects.all().values(
+            'suite_id', 
+            'suite_name', 
+            'suite_code', 
+            'std_follows',
+            'suite_desc'
+        )
+        
+        suite_list = []
+        for suite in suites:
+            suite_list.append({
+                'id': suite['suite_code'],
+                'name': suite['suite_name'],
+                'code': suite['suite_code'],
+                'description': suite['suite_desc'],
+                'standard': suite['std_follows']
+            })
+        
+        return Response(suite_list, status=200)
+    except Exception as e:
+        return Response(
+            {'error': f'Failed to fetch suites: {str(e)}'},
+            status=500
+        )
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
@@ -3872,6 +3966,47 @@ def testmanager_creation(request):
 
     return Response(data)
 
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def testmanager_report(request):
+    return Response({
+        "message": "Welcome to Test Manager Dashboard"
+    })
+
+
+# @api_view(["GET"])
+# @authentication_classes([JWTAuthentication])
+# @permission_classes([IsAuthenticated])
+# def manager_projects(request):
+#     if request.user.role != "TEST_MANAGER":
+#         return Response(
+#             {"error": "Access Denied"},
+#             status=403
+#         )
+
+#     projects = Project.objects.filter(
+#         manager=request.user,
+#         status="ASSIGNED_PENDING"
+#     ).select_related("customer")
+
+#     data = []
+
+#     for project in projects:
+#         data.append({
+#             "project_id": project.project_id,
+#             "project_name": project.project_name,
+#             "project_type": project.project_type,
+#             "customer": project.customer.organization,
+#             "priority": project.priority,
+#             "status": project.status,
+#             "start_date": project.start_date,
+#             "deadline": project.deadline,
+#             "testing_stage": project.testing_stage,
+#             "manager":project.manager
+#         })
+
+#     return Response(data)
+
 @api_view(["GET"])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -3883,27 +4018,46 @@ def manager_projects(request):
         )
 
     projects = Project.objects.filter(
-        manager=request.user,
-        status="ASSIGNED_PENDING"
+        manager=request.user
+    ).exclude(
+        status="COMPLETED"
     ).select_related("customer")
 
-    data = []
+    # OR get specific statuses
+    # projects = Project.objects.filter(
+    #     manager=request.user,
+    #     status__in=["ASSIGNED_PENDING", "TESTER_ASSIGNED", "TESTING", "REPORT_PENDING", "APPROVED"]
+    # ).select_related("customer")
 
+    data = []
     for project in projects:
+        customer_data = None
+        if project.customer:
+            customer_data = {
+                "id": project.customer.id,
+                "organization": project.customer.organization,
+                "username": project.customer.username,
+                "email": project.customer.email
+            }
+        
         data.append({
             "project_id": project.project_id,
             "project_name": project.project_name,
             "project_type": project.project_type,
-            "customer": project.customer.organization,
+            "project_desc": project.project_desc,
+            "customer": project.customer.organization if project.customer and project.customer.organization else (project.customer.username if project.customer else None),
+            "customer_data": customer_data,
             "priority": project.priority,
             "status": project.status,
             "start_date": project.start_date,
             "deadline": project.deadline,
             "testing_stage": project.testing_stage,
-            "manager":project.manager
+            "progress": project.progress,
+            "current_stage": project.current_stage,
         })
 
     return Response(data)
+
 
 @api_view(['POST', 'PUT'])
 @authentication_classes([JWTAuthentication])
@@ -4017,8 +4171,8 @@ def update_project_stage(request, project_id):
 @permission_classes([IsAuthenticated])
 def tester_project_detail(request, project_id):
 
-    # print("PROJECT ID:", project_id)
-    # print("USER:", request.user)
+    # print("Project ID:", project_id)
+    # print("User:", request.user)
 
     try:
         assignment = ProjectAssignment.objects.select_related(
@@ -4032,7 +4186,7 @@ def tester_project_detail(request, project_id):
 
         project = assignment.project
 
-        # print("PROJECT FOUND:", project)
+        # print("Project found:", project)
 
         data = {
             "project_id": project.project_id,

@@ -130,6 +130,45 @@ function TesterProjects() {
         navigate(`/tester/testing/${projectId}/${stageCode}`);
     };
 
+    // const renderStageDots = (currentStage, projectId) => {
+    //     const stages = [
+    //         { id: 0, name: "Information Gathering", key: "INFO" },
+    //         { id: 1, name: "Scanning & Enumeration", key: "SCAN" },
+    //         { id: 2, name: "Vulnerability Assessment", key: "VULN" },
+    //         { id: 3, name: "Exploitation", key: "EXPLOIT" },
+    //         { id: 4, name: "Post Exploitation", key: "POST" },
+    //         { id: 5, name: "Completed", key: "COMPLETED" }
+    //     ];
+
+    //     const stageMap = {
+    //         "INFO": 0,
+    //         "SCAN": 1,
+    //         "VULN": 2,
+    //         "EXPLOIT": 3,
+    //         "POST": 4,
+    //         "COMPLETED": 5,
+    //         "ST001": 0,
+    //         "ST002": 1,
+    //         "ST003": 2,
+    //         "ST004": 3,
+    //         "ST005": 4,
+    //         "ST006": 5
+    //     };
+
+    //     const currentStageIndex = stageMap[currentStage] !== undefined ? stageMap[currentStage] : -1;
+
+    //     return stages.map((stage, index) => (
+    //         <div 
+    //             key={stage.id}
+    //             className={`stage-dot ${index < currentStageIndex ? 'completed' : index === currentStageIndex ? 'active' : 'pending'}`}
+    //             onClick={() => openTesting(projectId, stage.key)}
+    //             title={stage.name}
+    //         >
+    //             {/* <span className="tooltip">{stage.name}</span> */}
+    //         </div>
+    //     ));
+    // };
+
     const renderStageDots = (currentStage, projectId) => {
         const stages = [
             { id: 0, name: "Information Gathering", key: "INFO" },
@@ -161,7 +200,6 @@ function TesterProjects() {
             <div 
                 key={stage.id}
                 className={`stage-dot ${index < currentStageIndex ? 'completed' : index === currentStageIndex ? 'active' : 'pending'}`}
-                onClick={() => openTesting(projectId, stage.key)}
                 title={stage.name}
             >
                 {/* <span className="tooltip">{stage.name}</span> */}
@@ -228,17 +266,6 @@ function TesterProjects() {
                                     <div className="project-name">
                                         {getProjectIcon(project.project_type)} {project.project_name}
                                     </div>
-                                    {/* <div className="project-icon">
-                                        <span className="project-type-badge" style={{
-                                            fontSize: "11px",
-                                            padding: "2px 8px",
-                                            borderRadius: "12px",
-                                            background: "#f0f2f8",
-                                            color: "#4a6cf7"
-                                        }}>
-                                            {project.project_type}
-                                        </span>
-                                    </div> */}
                                 </div>
 
                                 <div className="card-body">
@@ -271,17 +298,26 @@ function TesterProjects() {
                                     </span>
                                 </div>
 
-                                {/* Stage Progress - REMOVED duplicate stage name */}
-                                <div className="stage-section">
+                                {/* <div className="stage-section">
                                     <div className="stage-label">
                                         <span>Progress</span>
                                         <span>{project.current_stage || "N/A"} </span>
-                                        {/* REMOVED the current-stage span that was showing duplicate name */}
+                                    </div>
+                                    <div className="stage-progress">
+                                        {renderStageDots(project.current_stage, project.project_id)}
+                                    </div>
+                                </div> */}
+
+                                 <div className="stage-section" onClick={() => openTesting(project.project_id, project.current_stage)}>
+                                    <div className="stage-label">
+                                        <span>Progress</span>
+                                        <span>{project.current_stage || "N/A"} </span>
                                     </div>
                                     <div className="stage-progress">
                                         {renderStageDots(project.current_stage, project.project_id)}
                                     </div>
                                 </div>
+
                             </div>
                         ))
                     )}

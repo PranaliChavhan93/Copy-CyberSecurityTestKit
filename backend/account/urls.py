@@ -180,9 +180,11 @@ from asyncio import all_tasks
 from django.urls import path
 from account.views import (
     assign_tester,
+    customer_projects,
     customer_view,
     data_format,
     encryption,
+    get_suites,
     login,
     manager_projects,
     parameter_list,
@@ -194,6 +196,7 @@ from account.views import (
     save_output,
     standard_rfc,
     tester_list,
+    testmanager_report,
     update_project_stage,
     used_by,
     used_in,
@@ -269,6 +272,7 @@ urlpatterns = [
 
     path('projects/', project_view),
     path('projects/create/', project_creation),
+    path('suites/', get_suites),
 
     path('master/suites/', suites),
     path('master/suites/create/', suite_create),
@@ -313,6 +317,7 @@ urlpatterns = [
     path('testmanager/projects/', manager_projects),
     path("testmanager/projects/<int:id>/assign/", assign_tester),
     path("testmanager/projects/<str:project_id>/assign/", assign_tester),
+    path("testmanager/reports/", testmanager_report),
 
     path('tester/', tester_dashboard),
     path('testers/', tester_list),
@@ -339,4 +344,6 @@ urlpatterns = [
 
     path('customer/', customer_dashboard),
     path("customers/", customer_view),
+    
+    path('customer/projects/', customer_projects),
 ]

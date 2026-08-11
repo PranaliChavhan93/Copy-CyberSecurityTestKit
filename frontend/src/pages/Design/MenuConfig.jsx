@@ -26,7 +26,7 @@ export const menuConfig = {
   TESTER : [
       { label: "Dashboard", path : "/tester" },
       { label: "Projects", path : "/tester/projects" },
-      { label: "Testing", path : "/tester/testing" },  // ← This shows the project list
+      { label: "Testing", path : "/tester/testing" }, 
       { label: "Evidence", path : "/tester/evidence" },
       { label: "Reports", path : "/tester/reports" },
   ],
@@ -34,18 +34,17 @@ export const menuConfig = {
   TEST_MANAGER : [
     { label: "Dashboard", path : "/testmanager" },
     { label: "Projects", path : "/testmanager/projects" },
-    { label: "Test Assignment", path : "/testmanager/project/assign-tester" },
-    { label: "Reports", path : "/project/report" },
+    // { label: "Test Assignment", path : "/testmanager/project/assign-tester" },
+    { label: "Reports", path : "/testmanager/reports" },
   ],
 
   CUSTOMER : [
     { label : "Dashboard", path : "/customer" },
-    { label : "Projects", path : "/customer/project" },
+    { label : "Projects", path : "/customer/projects" },
     { label : "Project Tracking", path : "/customer/project/tracking" },
   ],
 
   SUPPORTADMIN : [
     { label : "Dashboard", path : "/support-admin" },
   ],
-
 };

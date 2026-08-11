@@ -511,6 +511,9 @@ function ProjectView() {
                                     <div className="project-type">
                                         <i className="fas fa-tag"></i> {project.project_type || "N/A"}
                                     </div>
+                                    <div className="project-type">
+                                        <i className="fas fa-tag"></i> {project.customer || "N/A"}
+                                    </div>
                                     <div className="deadline">
                                         <i className="fas fa-calendar"></i>{project.start_date || "-"}
                                     </div>

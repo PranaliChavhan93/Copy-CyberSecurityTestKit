@@ -12,7 +12,6 @@ from account.models import Tools, Suites, Stages, ToolMapping
 
 User = get_user_model()
 
-# Create TOTP secret safely
 @receiver(post_save, sender=User)
 def create_totp_secret(sender, instance, created, **kwargs):
     if created and not instance.totp_secret:
@@ -28,8 +27,6 @@ def create_user_session(sender, instance, created, **kwargs):
             device="system"
         )
 
-
-# Default users
 @receiver(post_migrate)
 def create_default_users(sender, **kwargs):
 
@@ -45,7 +42,6 @@ def create_default_users(sender, **kwargs):
     ]
 
     for username, role, password, fn, ln in default_users:
-
         if not User.objects.filter(username=username).exists():
 
             user = User.objects.create_user(
@@ -57,7 +53,6 @@ def create_default_users(sender, **kwargs):
                 last_name=ln,
                 account_status="ACTIVE",
             )
-
             user.save()
 
 @receiver(post_migrate)

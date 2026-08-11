@@ -1,20 +1,14 @@
-
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import AssignTesterPopup from "./AssignTesterPopup";
 import "../Master/ProjectView.css";
 
-function TMProjects() {
-
+function CustomerProjects() {
     const [projects, setProjects] = useState([]);
     const [selectType, setSelectType] = useState("ALL");
     const [selectStatus, setSelectStatus] = useState("ALL");
-
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
-
-    const [showAssignPopup, setShowAssignPopup] = useState(false);
-    const [selectedProject, setSelectedProject] = useState(null);
+    const [loading, setLoading] = useState(true);
 
     const getProjectIcon = (type) => {
         const icons = {
@@ -81,8 +75,9 @@ function TMProjects() {
 
     useEffect(() => {
         const token = sessionStorage.getItem("access");
-
-        fetch("http://127.0.0.1:8000/testmanager/projects/", {
+        
+        setLoading(true);
+        fetch("http://127.0.0.1:8000/customer/projects/", {
             headers: {
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json",
@@ -98,6 +93,9 @@ function TMProjects() {
         .catch((err) => {
             console.log(err);
             toast.error("Unable to load projects.");
+        })
+        .finally(() => {
+            setLoading(false);
         });
     }, []);
 
@@ -109,42 +107,19 @@ function TMProjects() {
 
     const totalRows = filteredProjects.length;
     const totalPages = Math.ceil(totalRows / rowsPerPage);
-
     const startIndex = (currentPage - 1) * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
+    const currentProjects = filteredProjects.slice(startIndex, endIndex);
 
-    const currentProjects = filteredProjects.slice(
-        startIndex,
-        endIndex
-    );
-
-    const handleAssignClick = (project) => {
-        setSelectedProject(project);
-        setShowAssignPopup(true);
-    };
-
-    const handleAssignClose = () => {
-        setShowAssignPopup(false);
-        
-        const token = sessionStorage.getItem("access");
-        fetch("http://127.0.0.1:8000/testmanager/projects/", {
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-            },
-        })
-        .then(async (res) => {
-            const data = await res.json();
-            if (!res.ok) {
-                throw new Error(data.error || "Unable to fetch projects");
-            }
-            setProjects(Array.isArray(data) ? data : []);
-        })
-        .catch((err) => {
-            console.log(err);
-            toast.error("Unable to refresh projects.");
-        });
-    };
+    if (loading) {
+        return (
+            <div className="view-container">
+                <div className="table-card" style={{ padding: "40px", textAlign: "center" }}>
+                    <div className="loading-spinner">Loading projects...</div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="view-container">
@@ -190,7 +165,7 @@ function TMProjects() {
                                 }}
                             >
                                 <option value="ALL">All</option>
-                                <option value="CREATED">Created</option>
+                                {/* <option value="CREATED">Created</option> */}
                                 <option value="ASSIGNED_PENDING">Pending Assignment</option>
                                 <option value="TESTER_ASSIGNED">Tester Assigned</option>
                                 <option value="TESTING">Testing</option>
@@ -210,16 +185,16 @@ function TMProjects() {
                                 <i className="fas fa-folder-open"></i>
                             </div>
                             <h3>No Projects Found</h3>
-                            <p>No projects have been assigned to you yet</p>
+                            <p>No projects have been created for your organization yet</p>
                             <p style={{ fontSize: "13px", color: "#9ca3af" }}>
                                 {selectType !== "ALL" || selectStatus !== "ALL" ? 
                                     "Try changing your filters" : 
-                                    "Check back later for new projects"
+                                    "Contact your test manager to create a project"
                                 }
                             </p>
                         </div>
                     ) : (
-                        currentProjects.map((project, index) => (
+                        currentProjects.map((project) => (
                             <div className="project-card" key={project.project_id}>
                                 <div className="card-header">
                                     <div className="project-name">
@@ -233,21 +208,27 @@ function TMProjects() {
                                     </div>
                                     
                                     <div className="deadline">
-                                        <i className="fas fa-building"></i>{project.customer || "N/A"}
-                                    </div>
-                                    
-                                    <div className="deadline">
-                                        {/* <i className="fas fa-layer-group"></i> Suite: {project.suite_name || project.project_type || "N/A"} */}
+                                        <i className="fas fa-user-tie"></i> Tester: {project.assigned_to?.name || "Not Assigned"}
                                     </div>
 
                                     <div className="deadline">
-                                        <i className="fas fa-calendar-alt"></i> 
-                                        {project.start_date || "-"}
+                                        <i className="fas fa-user-tie"></i> Manager: {project.manager?.name || "Not Assigned"}
                                     </div>
 
                                     <div className="deadline">
-                                        <i className="fas fa-calendar-alt"></i> 
-                                        {project.deadline || "-"}
+                                        <i className="fas fa-calendar-alt"></i> Start: {project.start_date || "-"}
+                                    </div>
+
+                                    <div className="deadline">
+                                        <i className="fas fa-calendar-alt"></i> Deadline: {project.deadline || "-"}
+                                    </div>
+
+                                    <div className="deadline">
+                                        {/* <i className="fas fa-chart-line"></i> Progress: {project.progress || 0}% */}
+                                    </div>
+
+                                    <div className="deadline">
+                                        <i className="fas fa-layer-group"></i> Current Stage: {getStageName(project.current_stage)}
                                     </div>
                                 </div>
 
@@ -260,48 +241,38 @@ function TMProjects() {
                                     </span>
                                 </div>
 
-                                {/* Assign Button for PENDING projects */}
-                                {project.status === "ASSIGNED_PENDING" && (
-                                    <div className="project-actions" style={{ 
-                                        marginTop: '12px', 
-                                        paddingTop: '12px', 
-                                        borderTop: '1px solid #f0f2f8' 
+                                {/* Progress Bar */}
+                                <div style={{ 
+                                    marginTop: '12px', 
+                                    paddingTop: '12px', 
+                                    borderTop: '1px solid #f0f2f8' 
+                                }}>
+                                    <div style={{ 
+                                        display: 'flex', 
+                                        justifyContent: 'space-between', 
+                                        fontSize: '12px', 
+                                        color: '#6b7a9a',
+                                        marginBottom: '4px'
                                     }}>
-                                        <button 
-                                            className="btn-assign"
-                                            onClick={() => handleAssignClick(project)}
-                                            style={{
-                                                width: '100%',
-                                                padding: '10px',
-                                                background: '#4a6cf7',
-                                                color: '#fff',
-                                                border: 'none',
-                                                borderRadius: '8px',
-                                                fontSize: '14px',
-                                                fontWeight: '600',
-                                                cursor: 'pointer',
-                                                transition: '0.3s',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: '8px'
-                                            }}
-                                            onMouseEnter={(e) => {
-                                                e.target.style.background = '#3b5de7';
-                                                e.target.style.transform = 'translateY(-2px)';
-                                                e.target.style.boxShadow = '0 4px 20px rgba(74,108,247,0.3)';
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                e.target.style.background = '#4a6cf7';
-                                                e.target.style.transform = 'translateY(0)';
-                                                e.target.style.boxShadow = 'none';
-                                            }}
-                                        >
-                                            {/* <i className="fas fa-user-plus"></i>  */}
-                                            Assign Tester
-                                        </button>
+                                        <span>Progress</span>
+                                        <span>{project.progress || 0}%</span>
                                     </div>
-                                )}
+                                    <div style={{
+                                        width: '100%',
+                                        height: '6px',
+                                        background: '#f0f2f8',
+                                        borderRadius: '4px',
+                                        overflow: 'hidden'
+                                    }}>
+                                        <div style={{
+                                            width: `${project.progress || 0}%`,
+                                            height: '100%',
+                                            background: project.progress >= 100 ? '#10b981' : '#4a6cf7',
+                                            borderRadius: '4px',
+                                            transition: 'width 0.3s ease'
+                                        }} />
+                                    </div>
+                                </div>
                             </div>
                         ))
                     )}
@@ -350,16 +321,8 @@ function TMProjects() {
                     </div>
                 </div>
             </div>
-
-            {/* Assign Tester Popup */}
-            {showAssignPopup && (
-                <AssignTesterPopup
-                    project={selectedProject}
-                    close={handleAssignClose}
-                />
-            )}
         </div>
     );
 }
 
-export default TMProjects;
+export default CustomerProjects;

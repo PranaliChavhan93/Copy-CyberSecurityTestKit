@@ -185,7 +185,7 @@ function UserView() {
 
         try {
             setLoading(true);
-            const token = sessionStorage.getItem("access");
+            const token = localStorage.getItem("access");
             
             if (!token) {
                 toast.error("No authentication token found. Please login again.");
