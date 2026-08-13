@@ -424,9 +424,6 @@ function WhatWebParameters({ tool, parameters, setParameters, stageCode, onAdvan
                         value={optional}
                         onChange={(e) => setOptional(e.target.value)}
                     />
-                    <small style={{ color: '#666', fontSize: '11px' }}>
-                        Common: --no-cookies, --no-errors, --url-prefix, --url-suffix, --dorks, --list-plugins
-                    </small>
                 </div>
             </div>
 
@@ -465,7 +462,7 @@ function WhatWebParameters({ tool, parameters, setParameters, stageCode, onAdvan
                     {isRunning ? (
                         <><i className="fas fa-spinner fa-spin"></i> Running...</>
                     ) : (
-                        <><i className="fas fa-play"></i> Run WhatWeb</>
+                        <><i className="fas fa-play"></i>Run Command</>
                     )}
                 </button>
 

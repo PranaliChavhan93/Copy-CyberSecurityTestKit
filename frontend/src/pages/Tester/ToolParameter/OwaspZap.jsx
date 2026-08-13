@@ -225,9 +225,6 @@ function OwaspZapParameters({ tool, parameters, setParameters, stageCode, onAdva
                         value={outputFile}
                         onChange={(e) => setOutputFile(e.target.value)}
                     />
-                    <small style={{ color: '#666', fontSize: '11px' }}>
-                        Supports: .html, .json, .md, .xml
-                    </small>
                 </div>
 
                 <div className="tool-field">
@@ -283,9 +280,6 @@ function OwaspZapParameters({ tool, parameters, setParameters, stageCode, onAdva
                         value={optional}
                         onChange={(e) => setOptional(e.target.value)}
                     />
-                    <small style={{ color: '#666', fontSize: '11px' }}>
-                        Common: -addoninstall, -addonupdate, -openapiurl, -graphqlurl, -autorun, -script, -certload, -hud
-                    </small>
                 </div>
             </div>
 
@@ -315,7 +309,7 @@ function OwaspZapParameters({ tool, parameters, setParameters, stageCode, onAdva
                     {isRunning ? (
                         <><i className="fas fa-spinner fa-spin"></i> Running...</>
                     ) : (
-                        <><i className="fas fa-play"></i> Run ZAP</>
+                        <><i className="fas fa-play"></i>Run Command</>
                     )}
                 </button>
 
@@ -377,7 +371,6 @@ function OwaspZapParameters({ tool, parameters, setParameters, stageCode, onAdva
                                 value={outputFile}
                                 onChange={(e) => setOutputFile(e.target.value)}
                             />
-                            <small>The output will be saved as a text file.</small>
                         </div>
 
                         <div className="popup-buttons">

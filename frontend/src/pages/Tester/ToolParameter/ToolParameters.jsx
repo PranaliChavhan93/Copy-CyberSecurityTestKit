@@ -13,6 +13,8 @@ import NiktoParameters from "./Nikto";
 import OwaspZapParameters from "./OwaspZap";
 import WhatWebParameters from "./Whatweb";
 import DirsearchParameters from "./Dirsearch";
+import MasscanParameters from "./Masscan";
+import WiresharkParameters from "./Wireshark";
 
 function ToolParameters({ tool, parameters, setParameters, stageCode, onAdvanceStage }) {
     if(tool?.tool_name === "Amass")
@@ -28,10 +30,34 @@ function ToolParameters({ tool, parameters, setParameters, stageCode, onAdvanceS
         );
     }
 
-    if(tool?.tool_name === "Sublist3r")
+    if(tool?.tool_name === "Masscan")
+    {
+        return (
+            <MasscanParameters
+                tool={tool}
+                parameters={parameters}
+                setParameters={setParameters}
+                stageCode={stageCode}
+                onAdvanceStage={onAdvanceStage}
+            />
+        );
+    }
+
+    if(tool?.tool_name === "Netdiscover")
     {
         return (
             <Netdiscover
+                tool={tool}
+                stageCode={stageCode}
+                onAdvanceStage={onAdvanceStage}
+            />
+        );
+    }
+
+    if(tool?.tool_name === "Wireshark")
+    {
+        return (
+            <WiresharkParameters
                 tool={tool}
                 stageCode={stageCode}
                 onAdvanceStage={onAdvanceStage}

@@ -565,7 +565,7 @@ function DirsearchParameters({ tool, parameters, setParameters, stageCode, onAdv
                     {isRunning ? (
                         <><i className="fas fa-spinner fa-spin"></i> Running...</>
                     ) : (
-                        <><i className="fas fa-play"></i> Run Dirsearch</>
+                        <><i className="fas fa-play"></i> Run Command</>
                     )}
                 </button>
 

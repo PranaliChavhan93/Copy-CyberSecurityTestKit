@@ -216,7 +216,7 @@ function NmapParameters({ tool, stageCode, onAdvanceStage }) {
                     {isExecuting ? (
                         <><i className="fas fa-spinner fa-spin"></i> Scanning...</>
                     ) : (
-                        <><i className="fas fa-play"></i> Run Nmap</>
+                        <><i className="fas fa-play"></i>Run Command</>
                     )}
                 </button>
 

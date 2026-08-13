@@ -245,9 +245,6 @@ function NiktoParameters({ tool, parameters, setParameters, stageCode, onAdvance
                         value={optional}
                         onChange={(e) => setOptional(e.target.value)}
                     />
-                    <small style={{ color: '#666', fontSize: '11px' }}>
-                        Common: -id (auth), -root (directory), -vhost (virtual host), -evasion (1-8,A,B), -mutate (1,2,3,4,6), -Cgidirs, -timeout, -maxtime, -followredirects
-                    </small>
                 </div>
             </div>
 
@@ -286,7 +283,7 @@ function NiktoParameters({ tool, parameters, setParameters, stageCode, onAdvance
                     {isRunning ? (
                         <><i className="fas fa-spinner fa-spin"></i> Running...</>
                     ) : (
-                        <><i className="fas fa-play"></i> Run Nikto</>
+                        <><i className="fas fa-play"></i>Run Command</>
                     )}
                 </button>
 

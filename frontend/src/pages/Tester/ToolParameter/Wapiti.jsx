@@ -345,7 +345,7 @@ function WapitiParameters({ tool, parameters, setParameters, stageCode, onAdvanc
                     {isRunning ? (
                         <><i className="fas fa-spinner fa-spin"></i> Running...</>
                     ) : (
-                        <><i className="fas fa-play"></i> Run Wapiti</>
+                        <><i className="fas fa-play"></i>Run Command</>
                     )}
                 </button>
 
