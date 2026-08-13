@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import "./SaveOutput.css";
 import AIAnalysisPanel from "./AIAnalysisPanel";
+import "./ToolCommon.css";
 
 function NmapParameters({ tool, stageCode, onAdvanceStage }) {
     const [target, setTarget] = useState("");
@@ -85,20 +85,28 @@ function NmapParameters({ tool, stageCode, onAdvanceStage }) {
         try {
             const response = await fetch("http://127.0.0.1:8000/tools/run/", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ command: cmd })
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${sessionStorage.getItem("access")}`
+                },
+                body: JSON.stringify({
+                    command: cmd,
+                    tool_id: tool?.id || null,
+                    parameters: {
+                        target,
+                        scanOption,
+                        outputFile
+                    }
+                })
             });
 
-            const rawText = await response.text();
+            const data = await response.json();
 
-            let data;
-            try {
-                data = JSON.parse(rawText);
-                setOutput(prev => prev + data.output);
-            } catch (jsonError) {
-                setOutput(prev => prev);
+            if (response.ok) {
+                setOutput(prev => prev + `${data.output || 'Command executed successfully'}\n`);
+            } else {
+                setOutput(prev => prev + `${data.message || 'Unknown error'}\n`);
             }
-
         } catch (error) {
             setOutput(prev => prev + "\nNetwork Error : " + error.message);
         } finally {
@@ -126,6 +134,10 @@ function NmapParameters({ tool, stageCode, onAdvanceStage }) {
     };
 
     const handleDownload = () => {
+        if (!output || output === "Waiting for execution..." || output === "Error: Please enter a Target IP") {
+            alert("No output available! Please run the command first.");
+            return;
+        }
         setPopupType("download");
         setShowPopup(true);
     };
@@ -142,11 +154,14 @@ function NmapParameters({ tool, stageCode, onAdvanceStage }) {
     };
 
     return (
-        <div className="amass-box">
-            <h3>Nmap Configuration</h3>
+        <div className="tool-box">
+            <h3>
+                Nmap Configuration
+                {tool && <span className="tool-badge">{tool.tool_name}</span>}
+            </h3>
 
-            <div className="amass-form">
-                <div className="amass-field">
+            <div className="tool-form">
+                <div className="tool-field">
                     <label>Scan Options</label>
                     <select
                         value={scanOption}
@@ -167,7 +182,7 @@ function NmapParameters({ tool, stageCode, onAdvanceStage }) {
                     </select>
                 </div>
 
-                <div className="amass-field">
+                <div className="tool-field">
                     <label>Target IP / Hostname / Range</label>
                     <input
                         value={target}
@@ -176,7 +191,7 @@ function NmapParameters({ tool, stageCode, onAdvanceStage }) {
                     />
                 </div>
 
-                <div className="amass-field">
+                <div className="tool-field">
                     <label>Save Output to File (-oN)</label>
                     <input
                         placeholder="scan_results.txt"
@@ -189,18 +204,22 @@ function NmapParameters({ tool, stageCode, onAdvanceStage }) {
             <div className="command-area">
                 <label>Generated Command</label>
                 <div className="command-preview">
-                    {generateCommand()}
+                    <span className="command-text">{generateCommand() || "Command..."}</span>
                 </div>
                 <br />
+
                 <button
-                    className="run-btn"
+                    className={`run-btn ${isExecuting ? 'running' : ''}`}
                     onClick={runCommand}
-                    // disabled={isExecuting || !target}
+                    disabled={isExecuting}
                 >
-                    {isExecuting ? 'Scanning...' : 'Run Nmap'}
+                    {isExecuting ? (
+                        <><i className="fas fa-spinner fa-spin"></i> Scanning...</>
+                    ) : (
+                        <><i className="fas fa-play"></i> Run Nmap</>
+                    )}
                 </button>
 
-                {/* Added Clear Button */}
                 {output && output !== "Waiting for execution..." && output !== "Error: Please enter a Target IP" && (
                     <button
                         className="run-btn"
@@ -211,7 +230,7 @@ function NmapParameters({ tool, stageCode, onAdvanceStage }) {
                         }}
                         onClick={clearTerminal}
                     >
-                        Clear
+                        <i className="fas fa-eraser"></i> Clear
                     </button>
                 )}
             </div>
@@ -221,9 +240,10 @@ function NmapParameters({ tool, stageCode, onAdvanceStage }) {
                 <div className="terminal" ref={terminalRef}>
                     <pre>
                         {output || "Waiting for execution..."}
+                        {isExecuting && <span className="cursor"></span>}
                     </pre>
                 </div>
-                {output && output !== "Waiting for execution..." && (
+                {output && output !== "Waiting for execution..." && output !== "Error: Please enter a Target IP" && (
                     <div className="action-buttons">
                         <AIAnalysisPanel
                             output={output}
@@ -235,26 +255,31 @@ function NmapParameters({ tool, stageCode, onAdvanceStage }) {
                             className="download-btn"
                             onClick={handleDownload}
                         >
-                            Download TXT
+                            <i className="fas fa-download"></i> Download TXT
                         </button>
                     </div>
                 )}
             </div>
 
-            {/* Popup Component */}
             {showPopup && (
-                <div className="popup-overlay">
-                    <div className="popup-box confirm-popup">
-                        <h3>📥 Download TXT File</h3>
+                <div className="popup-overlay" onClick={handlePopupCancel}>
+                    <div className="popup-box confirm-popup" onClick={(e) => e.stopPropagation()}>
+                        <h3><i className="fas fa-download"></i> Download File</h3>
                         
                         <div className="popup-message">
-                            <p>Do you confirm this output is correct and want to download it as a .txt file?</p>
+                            <p>Do you want to download this output as a .txt file?</p>
                         </div>
 
                         {outputFile && (
-                            <p className="popup-file-info">
-                                Filename: <strong>{outputFile.endsWith('.txt') ? outputFile : outputFile + '.txt'}</strong>
-                            </p>
+                            <div className="popup-file-info">
+                                <label>Filename</label>
+                                <input
+                                    type="text"
+                                    value={outputFile}
+                                    onChange={(e) => setOutputFile(e.target.value)}
+                                />
+                                <small>File will be saved as a text file.</small>
+                            </div>
                         )}
 
                         <div className="popup-buttons">
@@ -274,380 +299,6 @@ function NmapParameters({ tool, stageCode, onAdvanceStage }) {
                     </div>
                 </div>
             )}
-            
-        
-            <style jsx>{`
-                .action-buttons {
-                    display: flex;
-                    gap: 10px;
-                    margin-top: 10px;
-                    flex-wrap: wrap;
-                }
-
-                .pass-to-ai-btn {
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    color: white;
-                    border: none;
-                    padding: 10px 20px;
-                    border-radius: 6px;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    font-size: 14px;
-                    font-weight: 500;
-                    transition: all 0.3s ease;
-                }
-
-                .pass-to-ai-btn:hover:not(:disabled) {
-                    transform: translateY(-2px);
-                    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-                }
-
-                .pass-to-ai-btn:disabled {
-                    opacity: 0.6;
-                    cursor: not-allowed;
-                }
-
-                .download-btn {
-                    background: #28a745;
-                    color: white;
-                    border: none;
-                    padding: 10px 20px;
-                    border-radius: 6px;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    font-size: 14px;
-                    font-weight: 500;
-                    transition: all 0.3s ease;
-                }
-
-                .download-btn:hover:not(:disabled) {
-                    background: #218838;
-                    transform: translateY(-2px);
-                }
-
-                .download-btn:disabled {
-                    opacity: 0.6;
-                    cursor: not-allowed;
-                }
-
-                .popup-overlay {
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background: rgba(0, 0, 0, 0.6);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    z-index: 1000;
-                    backdrop-filter: blur(4px);
-                }
-
-                .popup-box {
-                    background: white;
-                    border-radius: 12px;
-                    padding: 30px;
-                    max-width: 600px;
-                    width: 90%;
-                    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-                    animation: slideIn 0.3s ease;
-                }
-
-                @keyframes slideIn {
-                    from {
-                        transform: translateY(-30px);
-                        opacity: 0;
-                    }
-                    to {
-                        transform: translateY(0);
-                        opacity: 1;
-                    }
-                }
-
-                .popup-box h3 {
-                    margin: 0 0 20px 0;
-                    color: #1a1a1a;
-                    font-size: 20px;
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                }
-
-                .popup-message {
-                    margin-bottom: 20px;
-                    color: #444;
-                    line-height: 1.5;
-                }
-
-                .popup-file-info {
-                    margin: 15px 0;
-                    padding: 12px;
-                    background: #f8f9fa;
-                    border-radius: 6px;
-                }
-
-                .popup-file-info label {
-                    display: block;
-                    font-weight: 500;
-                    margin-bottom: 5px;
-                    color: #333;
-                }
-
-                .popup-file-info input {
-                    width: 100%;
-                    padding: 8px 12px;
-                    border: 1px solid #ddd;
-                    border-radius: 4px;
-                    font-size: 14px;
-                }
-
-                .popup-file-info small {
-                    display: block;
-                    margin-top: 4px;
-                    color: #666;
-                    font-size: 12px;
-                }
-
-                .popup-preview {
-                    margin: 15px 0;
-                }
-
-                .popup-preview label {
-                    display: block;
-                    font-weight: 500;
-                    margin-bottom: 8px;
-                    color: #333;
-                }
-
-                .preview-text {
-                    background: #f8f9fa;
-                    padding: 12px;
-                    border-radius: 6px;
-                    font-family: monospace;
-                    font-size: 13px;
-                    max-height: 100px;
-                    overflow-y: auto;
-                    white-space: pre-wrap;
-                    word-break: break-all;
-                    color: #555;
-                }
-
-                .popup-buttons {
-                    display: flex;
-                    gap: 12px;
-                    justify-content: flex-end;
-                    margin-top: 20px;
-                }
-
-                .popup-cancel-btn {
-                    padding: 10px 24px;
-                    background: #e9ecef;
-                    color: #333;
-                    border: none;
-                    border-radius: 6px;
-                    cursor: pointer;
-                    font-size: 14px;
-                    font-weight: 500;
-                    transition: all 0.3s ease;
-                }
-
-                .popup-cancel-btn:hover {
-                    background: #dee2e6;
-                }
-
-                .popup-confirm-btn {
-                    padding: 10px 24px;
-                    background: #4a6cf7;
-                    color: white;
-                    border: none;
-                    border-radius: 6px;
-                    cursor: pointer;
-                    font-size: 14px;
-                    font-weight: 500;
-                    transition: all 0.3s ease;
-                }
-
-                .popup-confirm-btn:hover {
-                    background: #3a5cd5;
-                    transform: translateY(-1px);
-                }
-
-                /* AI Analysis Popup Styles */
-                .analysis-popup {
-                    max-width: 700px;
-                    max-height: 80vh;
-                    display: flex;
-                    flex-direction: column;
-                }
-
-                .analysis-popup-header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    border-bottom: 1px solid #e9ecef;
-                    padding-bottom: 15px;
-                    margin-bottom: 15px;
-                }
-
-                .analysis-popup-header h3 {
-                    margin: 0;
-                    color: #1a1a1a;
-                    font-size: 20px;
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                }
-
-                .close-popup-btn {
-                    background: none;
-                    border: none;
-                    font-size: 20px;
-                    color: #999;
-                    cursor: pointer;
-                    padding: 4px 8px;
-                    border-radius: 4px;
-                    transition: all 0.3s ease;
-                }
-
-                .close-popup-btn:hover {
-                    background: #f5f5f5;
-                    color: #333;
-                }
-
-                .analysis-popup-body {
-                    flex: 1;
-                    overflow-y: auto;
-                    margin-bottom: 15px;
-                    min-height: 100px;
-                    max-height: 400px;
-                }
-
-                .loading-container {
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    padding: 40px 20px;
-                    text-align: center;
-                }
-
-                .spinner {
-                    width: 50px;
-                    height: 50px;
-                    border: 4px solid #e9ecef;
-                    border-top: 4px solid #4a6cf7;
-                    border-radius: 50%;
-                    animation: spin 1s linear infinite;
-                    margin-bottom: 20px;
-                }
-
-                @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
-                }
-
-                .loading-container p {
-                    margin: 5px 0;
-                    color: #333;
-                    font-size: 16px;
-                }
-
-                .loading-subtext {
-                    color: #999 !important;
-                    font-size: 14px !important;
-                }
-
-                .analysis-content {
-                    background: #f8f9fa;
-                    padding: 20px;
-                    border-radius: 8px;
-                    white-space: pre-wrap;
-                    font-family: inherit;
-                    line-height: 1.6;
-                    color: #333;
-                }
-
-                .analysis-content p {
-                    margin: 0 0 8px 0;
-                }
-
-                .error-message {
-                    display: flex;
-                    align-items: center;
-                    gap: 12px;
-                    padding: 20px;
-                    background: #fff5f5;
-                    border-radius: 8px;
-                    color: #dc3545;
-                }
-
-                .error-message i {
-                    font-size: 24px;
-                }
-
-                .analysis-popup-footer {
-                    border-top: 1px solid #e9ecef;
-                    padding-top: 15px;
-                    display: flex;
-                    justify-content: flex-end;
-                }
-
-                .continue-btn {
-                    padding: 10px 30px;
-                    background: #4a6cf7;
-                    color: white;
-                    border: none;
-                    border-radius: 6px;
-                    cursor: pointer;
-                    font-size: 15px;
-                    font-weight: 500;
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    transition: all 0.3s ease;
-                }
-
-                .continue-btn:hover:not(:disabled) {
-                    background: #3a5cd5;
-                    transform: translateY(-1px);
-                    box-shadow: 0 4px 12px rgba(74, 108, 247, 0.3);
-                }
-
-                .continue-btn:disabled {
-                    opacity: 0.6;
-                    cursor: not-allowed;
-                }
-
-                .cursor {
-                    display: inline-block;
-                    width: 8px;
-                    height: 18px;
-                    background: #4a6cf7;
-                    animation: blink 1s infinite;
-                    margin-left: 2px;
-                    vertical-align: middle;
-                }
-
-                @keyframes blink {
-                    0%, 50% { opacity: 1; }
-                    51%, 100% { opacity: 0; }
-                }
-
-                .tool-badge {
-                    background: #4a6cf7;
-                    color: white;
-                    padding: 2px 12px;
-                    border-radius: 20px;
-                    font-size: 12px;
-                    font-weight: 400;
-                    margin-left: 10px;
-                }
-            `}</style>
         </div>
     );
 }

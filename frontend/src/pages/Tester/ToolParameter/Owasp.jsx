@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import AIAnalysisPanel from "./AIAnalysisPanel";
+import "./ToolCommon.css";
 
 function OwaspParameter({ tool, parameters, setParameters, stageCode, onAdvanceStage }) {
     const [zapMode, setZapMode] = useState("cmd");
@@ -7,7 +8,6 @@ function OwaspParameter({ tool, parameters, setParameters, stageCode, onAdvanceS
     const [outputFile, setOutputFile] = useState("zap_results.txt");
     const [optionalParams, setOptionalParams] = useState("");
     const [configParams, setConfigParams] = useState("");
-    // ZAP specific options
     const [scanType, setScanType] = useState("quick");
     const [addonAction, setAddonAction] = useState("install");
     const [addonId, setAddonId] = useState("");
@@ -37,7 +37,6 @@ function OwaspParameter({ tool, parameters, setParameters, stageCode, onAdvanceS
     const generateCommand = () => {
         let cmd = "zap.sh";
 
-        // Core options
         if (zapMode === "cmd") {
             cmd += " -cmd";
         } else if (zapMode === "daemon") {
@@ -46,7 +45,6 @@ function OwaspParameter({ tool, parameters, setParameters, stageCode, onAdvanceS
             cmd += " -silent";
         }
 
-        // Session options
         if (sessionPath) {
             if (zapMode === "newsession") {
                 cmd += ` -newsession ${sessionPath}`;
@@ -55,7 +53,6 @@ function OwaspParameter({ tool, parameters, setParameters, stageCode, onAdvanceS
             }
         }
 
-        // Scan options
         if (scanType === "quick" && targetUrl) {
             cmd += ` -quickurl ${targetUrl}`;
             if (outputFile) {
@@ -71,7 +68,6 @@ function OwaspParameter({ tool, parameters, setParameters, stageCode, onAdvanceS
             cmd += ` -postmanurl ${targetUrl}`;
         }
 
-        // Add-on management
         if (addonAction === "install" && addonId) {
             cmd += ` -addoninstall ${addonId}`;
         } else if (addonAction === "uninstall" && addonId) {
@@ -82,25 +78,14 @@ function OwaspParameter({ tool, parameters, setParameters, stageCode, onAdvanceS
             cmd += " -addonlist";
         }
 
-        // Automation
         if (scanType === "autorun" && optionalParams) {
             cmd += ` -autorun ${optionalParams}`;
         }
 
-        // Configuration
         if (configParams) {
             cmd += ` -config ${configParams}`;
         }
 
-        // Report format for quick scan
-        if (outputFile && scanType === "quick") {
-            const extension = outputFile.split('.').pop().toLowerCase();
-            if (['html', 'json', 'md', 'xml'].includes(extension)) {
-                // Already set via -quickout
-            }
-        }
-
-        // Optional parameters
         if (optionalParams && scanType !== "quick") {
             cmd += ` ${optionalParams}`;
         }
@@ -223,18 +208,15 @@ function OwaspParameter({ tool, parameters, setParameters, stageCode, onAdvanceS
     };
 
     return (
-        <div className="amass-box">
+        <div className="tool-box">
             <h3>
                 OWASP ZAP Configuration
                 {tool && <span className="tool-badge">{tool.tool_name}</span>}
             </h3>
 
-            <div className="amass-form">
-                {/* Mode Selection */}
-                <div className="amass-field">
-                    <label>
-                        ZAP Mode
-                    </label>
+            <div className="tool-form">
+                <div className="tool-field">
+                    <label>ZAP Mode</label>
                     <select
                         value={zapMode}
                         onChange={(e) => setZapMode(e.target.value)}
@@ -246,11 +228,8 @@ function OwaspParameter({ tool, parameters, setParameters, stageCode, onAdvanceS
                     </select>
                 </div>
 
-                {/* Target URL */}
-                <div className="amass-field">
-                    <label>
-                        Target URL
-                    </label>
+                <div className="tool-field">
+                    <label>Target URL</label>
                     <input
                         placeholder="https://example.com"
                         value={targetUrl}
@@ -258,11 +237,8 @@ function OwaspParameter({ tool, parameters, setParameters, stageCode, onAdvanceS
                     />
                 </div>
 
-                {/* Scan Type */}
-                <div className="amass-field">
-                    <label>
-                        Scan Type
-                    </label>
+                <div className="tool-field">
+                    <label>Scan Type</label>
                     <select
                         value={scanType}
                         onChange={(e) => setScanType(e.target.value)}
@@ -276,11 +252,8 @@ function OwaspParameter({ tool, parameters, setParameters, stageCode, onAdvanceS
                     </select>
                 </div>
 
-                {/* Session Path */}
-                <div className="amass-field">
-                    <label>
-                        Session Path
-                    </label>
+                <div className="tool-field">
+                    <label>Session Path</label>
                     <input
                         placeholder="/path/to/session.session"
                         value={sessionPath}
@@ -288,11 +261,8 @@ function OwaspParameter({ tool, parameters, setParameters, stageCode, onAdvanceS
                     />
                 </div>
 
-                {/* Add-on Management */}
-                <div className="amass-field">
-                    <label>
-                        Add-on Action
-                    </label>
+                <div className="tool-field">
+                    <label>Add-on Action</label>
                     <select
                         value={addonAction}
                         onChange={(e) => setAddonAction(e.target.value)}
@@ -306,10 +276,8 @@ function OwaspParameter({ tool, parameters, setParameters, stageCode, onAdvanceS
                 </div>
 
                 {addonAction !== "none" && addonAction !== "update" && addonAction !== "list" && (
-                    <div className="amass-field">
-                        <label>
-                            Add-on ID
-                        </label>
+                    <div className="tool-field">
+                        <label>Add-on ID</label>
                         <input
                             placeholder="e.g., openapi"
                             value={addonId}
@@ -318,11 +286,8 @@ function OwaspParameter({ tool, parameters, setParameters, stageCode, onAdvanceS
                     </div>
                 )}
 
-                {/* Output File */}
-                <div className="amass-field">
-                    <label>
-                        Output File
-                    </label>
+                <div className="tool-field">
+                    <label>Output File</label>
                     <input
                         placeholder="zap_results.txt"
                         value={outputFile}
@@ -330,11 +295,8 @@ function OwaspParameter({ tool, parameters, setParameters, stageCode, onAdvanceS
                     />
                 </div>
 
-                {/* Configuration Parameters */}
-                <div className="amass-field">
-                    <label>
-                        Config Parameters (key=value)
-                    </label>
+                <div className="tool-field">
+                    <label>Config Parameters (key=value)</label>
                     <input
                         placeholder="key1=value1 key2=value2"
                         value={configParams}
@@ -342,11 +304,8 @@ function OwaspParameter({ tool, parameters, setParameters, stageCode, onAdvanceS
                     />
                 </div>
 
-                {/* Optional Parameters */}
-                <div className="amass-field">
-                    <label>
-                        Optional Parameters
-                    </label>
+                <div className="tool-field">
+                    <label>Optional Parameters</label>
                     <input
                         placeholder="-host 127.0.0.1 -port 8080"
                         value={optionalParams}
@@ -356,9 +315,7 @@ function OwaspParameter({ tool, parameters, setParameters, stageCode, onAdvanceS
             </div>
 
             <div className="command-area">
-                <label>
-                    Generated Command
-                </label>
+                <label>Generated Command</label>
                 <div className="command-preview">
                     <span className="command-text">{command || "Command..."}</span>
                 </div>
@@ -396,14 +353,10 @@ function OwaspParameter({ tool, parameters, setParameters, stageCode, onAdvanceS
                 <div className="terminal" ref={terminalRef}>
                     <pre>
                         {output || "Waiting for execution..."}
-                        {isRunning && 
-                            <span className="cursor"></span>
-                        }
+                        {isRunning && <span className="cursor"></span>}
                     </pre>
                 </div>
-                {output && 
-                    output !== 
-                    "Waiting for execution..." && (
+                {output && output !== "Waiting for execution..." && (
                     <div className="action-buttons">
                         <AIAnalysisPanel
                             output={output}
@@ -415,25 +368,31 @@ function OwaspParameter({ tool, parameters, setParameters, stageCode, onAdvanceS
                             className="download-btn"
                             onClick={handleDownload}
                         >
-                            Download TXT
+                            <i className="fas fa-download"></i> Download TXT
                         </button>
                     </div>
                 )}
             </div>
 
             {showPopup && (
-                <div className="popup-overlay">
-                    <div className="popup-box confirm-popup">
-                        <h3>📥 Download TXT File</h3>
+                <div className="popup-overlay" onClick={handlePopupCancel}>
+                    <div className="popup-box confirm-popup" onClick={(e) => e.stopPropagation()}>
+                        <h3><i className="fas fa-download"></i> Download File</h3>
                         
                         <div className="popup-message">
-                            <p>Do you confirm this output is correct and want to download it as a .txt file?</p>
+                            <p>Do you want to download this output as a .txt file?</p>
                         </div>
 
                         {outputFile && (
-                            <p className="popup-file-info">
-                                Filename: <strong>{outputFile.endsWith('.txt') ? outputFile : outputFile + '.txt'}</strong>
-                            </p>
+                            <div className="popup-file-info">
+                                <label>Filename</label>
+                                <input
+                                    type="text"
+                                    value={outputFile}
+                                    onChange={(e) => setOutputFile(e.target.value)}
+                                />
+                                <small>File will be saved as a text file.</small>
+                            </div>
                         )}
 
                         <div className="popup-buttons">

@@ -2545,9 +2545,9 @@ def tools(sender, **kwargs):
         ("Waybackurls", "WEB", "Information Gathering", "SOFTWARE"),
         ("OWASP ZWAP", "WEB", "Information Gathering", "SOFTWARE"),
 
-        ("Android Test Device", "WEB", "Information Gathering", "HARDWARE"),
-        ("iPhone Test Device", "WEB", "Information Gathering", "HARDWARE"),
-        ("USB Debugging Cable", "WEB", "Information Gathering", "HARDWARE"),
+        # ("Android Test Device", "WEB", "Information Gathering", "HARDWARE"),
+        # ("iPhone Test Device", "WEB", "Information Gathering", "HARDWARE"),
+        # ("USB Debugging Cable", "WEB", "Information Gathering", "HARDWARE"),
 
         ("Nmap", "WEB", "Scanning & Enumeration", "SOFTWARE"),
         ("WhatWeb", "WEB", "Scanning & Enumeration", "SOFTWARE"),

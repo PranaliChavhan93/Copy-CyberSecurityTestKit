@@ -1,7 +1,6 @@
-
-import { useState } from "react";
-import "./SaveOutput.css";
+import { useState, useRef, useEffect } from "react";
 import AIAnalysisPanel from "./AIAnalysisPanel";
+import "./ToolCommon.css";
 
 function Netdiscover({ tool, stageCode, onAdvanceStage }) {
     const [interfaceName, setInterfaceName] = useState("eth0");
@@ -13,6 +12,14 @@ function Netdiscover({ tool, stageCode, onAdvanceStage }) {
     const [showPopup, setShowPopup] = useState(false);
     const [isExecuting, setIsExecuting] = useState(false);
     const [popupType, setPopupType] = useState("");
+
+    const terminalRef = useRef(null);
+
+    useEffect(() => {
+        if (terminalRef.current) {
+            terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+        }
+    }, [output]);
 
     const generateCommand = () => {
         let cmd = "sudo netdiscover";
@@ -39,37 +46,47 @@ function Netdiscover({ tool, stageCode, onAdvanceStage }) {
     const runCommand = async () => {
         setIsExecuting(true);
         const cmd = generateCommand();
-        
+        setOutput(prev => prev + `\n# ${cmd}\n`);
+
         try {
             const response = await fetch(
                 "http://127.0.0.1:8000/tools/run/",
                 {
                     method: "POST",
                     headers: {
-                        "Content-Type": "application/json"
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${sessionStorage.getItem("access")}`
                     },
                     body: JSON.stringify({
-                        command: cmd
+                        command: cmd,
+                        tool_id: tool?.id || null,
+                        parameters: {
+                            interfaceName,
+                            range,
+                            mode,
+                            sleep,
+                            outputFile
+                        }
                     })
                 }
             );
 
             const data = await response.json();
 
-            // setOutput(prev => prev +"\n"+data.output);
-            setOutput(prev => prev + `\n# ${cmd}\n`);
-
-
+            if (response.ok) {
+                setOutput(prev => prev + `${data.output || 'Command executed successfully'}\n`);
+            } else {
+                setOutput(prev => prev + `${data.message || 'Unknown error'}\n`);
+            }
         } catch (error) {
-            setOutput(
-                prev =>
-                prev +
-                "\nError : " +
-                error.message
-            );
+            setOutput(prev => prev + `\nError : ${error.message}\n`);
         } finally {
             setIsExecuting(false);
         }
+    };
+
+    const clearTerminal = () => {
+        setOutput("");
     };
 
     const downloadTxtFile = (content, filename) => {
@@ -111,11 +128,14 @@ function Netdiscover({ tool, stageCode, onAdvanceStage }) {
     };
 
     return (
-        <div className="amass-box">
-            <h3>Netdiscover Configuration</h3>
+        <div className="tool-box">
+            <h3>
+                Netdiscover Configuration
+                {tool && <span className="tool-badge">{tool.tool_name}</span>}
+            </h3>
 
-            <div className="amass-form">
-                <div className="amass-field">
+            <div className="tool-form">
+                <div className="tool-field">
                     <label>Interface</label>
                     <input
                         value={interfaceName}
@@ -124,7 +144,7 @@ function Netdiscover({ tool, stageCode, onAdvanceStage }) {
                     />
                 </div>
 
-                <div className="amass-field">
+                <div className="tool-field">
                     <label>Network Range</label>
                     <input
                         placeholder="192.168.1.0/24"
@@ -133,7 +153,7 @@ function Netdiscover({ tool, stageCode, onAdvanceStage }) {
                     />
                 </div>
 
-                <div className="amass-field">
+                <div className="tool-field">
                     <label>Scan Mode</label>
                     <select
                         value={mode}
@@ -147,7 +167,7 @@ function Netdiscover({ tool, stageCode, onAdvanceStage }) {
                     </select>
                 </div>
 
-                <div className="amass-field">
+                <div className="tool-field">
                     <label>Sleep Time</label>
                     <input
                         placeholder="10"
@@ -156,7 +176,7 @@ function Netdiscover({ tool, stageCode, onAdvanceStage }) {
                     />
                 </div>
 
-                <div className="amass-field">
+                <div className="tool-field">
                     <label>Save Output File</label>
                     <input
                         placeholder="results.txt"
@@ -169,29 +189,50 @@ function Netdiscover({ tool, stageCode, onAdvanceStage }) {
             <div className="command-area">
                 <label>Generated Command</label>
                 <div className="command-preview">
-                    {generateCommand()}
+                    <span className="command-text">{generateCommand() || "Command..."}</span>
                 </div>
+                <br />
+
                 <button
-                    className="run-btn"
+                    className={`run-btn ${isExecuting ? 'running' : ''}`}
                     onClick={runCommand}
                     disabled={isExecuting}
                 >
-                    {isExecuting ? 'Running...' : 'Run'}
+                    {isExecuting ? (
+                        <><i className="fas fa-spinner fa-spin"></i> Running...</>
+                    ) : (
+                        <><i className="fas fa-play"></i> Run Command</>
+                    )}
                 </button>
+
+                {output && (
+                    <button
+                        className="run-btn"
+                        style={{
+                            background: '#6b7a9a',
+                            marginLeft: '10px',
+                            padding: '12px 20px'
+                        }}
+                        onClick={clearTerminal}
+                    >
+                        <i className="fas fa-eraser"></i> Clear
+                    </button>
+                )}
             </div>
 
             <div className="command-area">
-                <label>Result</label>
-                <div className="terminal">
+                <label>Terminal Output</label>
+                <div className="terminal" ref={terminalRef}>
                     <pre>
                         {output || "Waiting for execution..."}
+                        {isExecuting && <span className="cursor"></span>}
                     </pre>
                 </div>
                 {output && output !== "Waiting for execution..." && (
                     <div className="action-buttons">
                         <AIAnalysisPanel
                             output={output}
-                            toolName={tool?.tool_name || "Sublist3r"}
+                            toolName={tool?.tool_name || "Netdiscover"}
                             stageCode={stageCode}
                             onAdvanceStage={onAdvanceStage}
                         />
@@ -199,42 +240,35 @@ function Netdiscover({ tool, stageCode, onAdvanceStage }) {
                             className="download-btn"
                             onClick={handleDownload}
                         >
-                            Download TXT
+                            <i className="fas fa-download"></i> Download TXT
                         </button>
                     </div>
                 )}
             </div>
 
             {showPopup && (
-                <div className="popup-overlay">
-                    <div className="popup-box confirm-popup">
-                        <h3>📥 Download TXT File</h3>
+                <div className="popup-overlay" onClick={handlePopupCancel}>
+                    <div className="popup-box confirm-popup" onClick={(e) => e.stopPropagation()}>
+                        <h3><i className="fas fa-download"></i> Download File</h3>
                         
                         <div className="popup-message">
-                            <p>Do you confirm this output is correct and want to download it as a .txt file?</p>
+                            <p>Do you want to download this output as a .txt file?</p>
                         </div>
-
-                        {popupType === 'download' && outputFile && (
-                            <p className="popup-file-info">
-                                Filename: <strong>{outputFile.endsWith('.txt') ? outputFile : outputFile + '.txt'}</strong>
-                            </p>
-                        )}
 
                         <div className="popup-buttons">
                             <button 
                                 className="popup-cancel-btn"
                                 onClick={handlePopupCancel}
                             >
-                                Cancle
+                                Cancel
                             </button>
                             <button 
                                 className="popup-confirm-btn"
                                 onClick={handlePopupConfirm}
                             >
-                                Conform
+                                Confirm
                             </button>
                         </div>
-                        
                     </div>
                 </div>
             )}

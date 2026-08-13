@@ -4,6 +4,15 @@ import ReconParameter from "./Recon";
 import OwaspParameter from "./Owasp";
 import NmapParameter from "./Nmap";
 import Burpsuite from "./Burpsuite";
+import Enum4LinuxParameters from "./Enum4Linux";
+import MetasploitParameters from "./Metasploit";
+import BurpSuiteParameters from "./Burpsuite";
+import Radare2Parameters from "./Radare2";
+import WapitiParameters from "./Wapiti";
+import NiktoParameters from "./Nikto";
+import OwaspZapParameters from "./OwaspZap";
+import WhatWebParameters from "./Whatweb";
+import DirsearchParameters from "./Dirsearch";
 
 function ToolParameters({ tool, parameters, setParameters, stageCode, onAdvanceStage }) {
     if(tool?.tool_name === "Amass")
@@ -52,7 +61,84 @@ function ToolParameters({ tool, parameters, setParameters, stageCode, onAdvanceS
         )
     }
 
+    if(tool?.tool_name === "OWASP ZAP")
+    {
+        return(
+            <OwaspZapParameters
+                tool={tool}
+                stageCode={stageCode}
+                onAdvanceStage={onAdvanceStage}
+            />
+        )
+    }
+
+    if(tool?.tool_name === "Radare2")
+    {
+        return(
+            <Radare2Parameters
+                tool={tool}
+                stageCode={stageCode}
+                onAdvanceStage={onAdvanceStage}
+            />
+        )
+    }
+
+    if(tool?.tool_name === "WhatWeb")
+    {
+        return(
+            <WhatWebParameters
+                tool={tool}
+                stageCode={stageCode}
+                onAdvanceStage={onAdvanceStage}
+            />
+        )
+    }
+
+    if(tool?.tool_name === "Wapiti")
+    {
+        return(
+            <WapitiParameters
+                tool={tool}
+                stageCode={stageCode}
+                onAdvanceStage={onAdvanceStage}
+            />
+        )
+    }
+
+    if(tool?.tool_name === "Dirsearch")
+    {
+        return(
+            <DirsearchParameters
+                tool={tool}
+                stageCode={stageCode}
+                onAdvanceStage={onAdvanceStage}
+            />
+        )
+    }
+
+    if(tool?.tool_name === "Nikto")
+    {
+        return(
+            <NiktoParameters
+                tool={tool}
+                stageCode={stageCode}
+                onAdvanceStage={onAdvanceStage}
+            />
+        )
+    }
+
     if(tool?.tool_name === "Nmap")
+    {
+        return(
+            <NmapParameter
+                tool={tool}
+                stageCode={stageCode}
+                onAdvanceStage={onAdvanceStage}
+            />
+        )
+    }
+
+    if(tool?.tool_name === "Netdiscover")
     {
         return(
             <NmapParameter
@@ -66,7 +152,29 @@ function ToolParameters({ tool, parameters, setParameters, stageCode, onAdvanceS
     if(tool?.tool_name === "Burp Suite Community Edition")
     {
         return(
-            <BurpsuiteParameter
+            <BurpSuiteParameters
+                tool={tool}
+                stageCode={stageCode}
+                onAdvanceStage={onAdvanceStage}
+            />
+        )
+    }
+
+    if(tool?.tool_name === "Enum4linux")
+    {
+        return(
+            <Enum4LinuxParameters
+                tool={tool}
+                stageCode={stageCode}
+                onAdvanceStage={onAdvanceStage}
+            />
+        )
+    }
+    
+    if(tool?.tool_name === "Metasploit Framework")
+    {
+        return(
+            <MetasploitParameters
                 tool={tool}
                 stageCode={stageCode}
                 onAdvanceStage={onAdvanceStage}

@@ -1,1103 +1,329 @@
 """
 knowledge_base.py
 ------------------
-Offline Pentest Workflow Knowledge Base
+Stage/tool definitions plus the rule-based logic that builds the structured
+"AI Analysis Report" for each stage:
 
-Contains:
-    • Pentest stages
-    • Tool mapping
-    • Narrative generation
-    • Recommendation engine
+    Current Stage        -> 1-2 line stage/tool/analysis summary
+    Extracted Info        -> precise bullet list of parsed artifacts
+    Recommended Next Stage -> tool(s), summary, scan-for, expected output, priority
+    Success Criteria      -> the condition that must hold to move on
+    Proceed to Next Stage  -> yes/no gate based on that condition
+
+If a RagStore is supplied and it has relevant uploaded reference material
+(playbooks, OWASP notes, prior reports, etc.), that guidance is surfaced
+first as "custom guidance"; the built-in rule logic always still runs as
+the offline fallback/baseline, matching a hybrid retrieval-then-reason flow.
 """
 
-# ==========================================================
-# Pentest Workflow Stages
-# ==========================================================
-
 STAGES = [
-
     {
         "id": 1,
         "name": "Information Gathering",
-        "tools": [
-            "theHarvester",
-            "Amass",
-            "Sublist3r",
-            "Assetfinder",
-            "Recon-ng",
-            "Waybackurls",
-            "OWASP ZAP"
-        ],
-        "blurb": (
-            "Collect publicly available information about the target including "
-            "domains, subdomains, IP addresses, DNS records, technologies, "
-            "emails and historical URLs."
-        ),
+        "tools": ["theHarvester", "Amass", "Sublist3r", "Assetfinder",
+                   "Recon-ng", "Waybackurls", "OWASP ZAP"],
+        "blurb": "Passive/active recon: domains, subdomains, emails, historical URLs.",
     },
-
     {
         "id": 2,
         "name": "Scanning & Enumeration",
-        "tools": [
-            "Nmap",
-            "WhatWeb",
-            "Dirsearch",
-            "Burp Suite Community Edition"
-        ],
-        "blurb": (
-            "Identify live systems, running services, technologies, "
-            "web directories and application endpoints."
-        ),
+        "tools": ["Nmap", "WhatWeb", "Dirsearch", "Burp Suite Community Edition"],
+        "blurb": "Identify live hosts, open ports, running services, tech stack, and content.",
     },
-
     {
         "id": 3,
         "name": "Vulnerability Assessment",
-        "tools": [
-            "OWASP ZAP",
-            "Nikto",
-            "Wapiti",
-            "Burp Suite Professional"
-        ],
-        "blurb": (
-            "Identify vulnerabilities, CVEs, insecure configurations, "
-            "authentication weaknesses and web application flaws."
-        ),
+        "tools": ["OWASP ZAP", "Nikto", "Wapiti", "Burp Suite Professional"],
+        "blurb": "Map discovered services/endpoints to known weaknesses and misconfigurations.",
     },
-
     {
         "id": 4,
         "name": "Exploitation",
-        "tools": [
-            "SQLmap",
-            "BeEF",
-            "Metasploit Framework",
-            "Burp Suite Professional"
-        ],
-        "blurb": (
-            "Validate discovered vulnerabilities through controlled exploitation "
-            "to demonstrate real-world impact."
-        ),
+        "tools": ["SQLmap", "BeEF", "Metasploit Framework", "Burp Suite Professional"],
+        "blurb": "Attempt to actively exploit identified vulnerabilities to gain access.",
     },
-
     {
         "id": 5,
         "name": "Post-Exploitation",
-        "tools": [
-            "Empire",
-            "Metasploit Framework",
-            "Netcat"
-        ],
-        "blurb": (
-            "Privilege escalation, persistence, lateral movement, evidence "
-            "collection and engagement cleanup."
-        ),
-    }
-
+        "tools": ["Empire", "Metasploit Framework", "Netcat"],
+        "blurb": "Maintain access, escalate privileges, pivot, and gather evidence.",
+    },
 ]
 
-# ==========================================================
-
-STAGE_BY_ID = {stage["id"]: stage for stage in STAGES}
-
-# ==========================================================
+STAGE_BY_ID = {s["id"]: s for s in STAGES}
 
 
 def get_tools_for_stage(stage_id):
     return STAGE_BY_ID[stage_id]["tools"]
 
 
-# ==========================================================
-
-
-def _fmt_list(items, limit=10):
-
+def _fmt_list(items, limit=8):
     items = list(items)
-
     if not items:
-        return "None"
-
+        return "none"
     shown = items[:limit]
+    extra = f" (+{len(items) - limit} more)" if len(items) > limit else ""
+    return ", ".join(str(i) for i in shown) + extra
 
-    if len(items) > limit:
-        return ", ".join(map(str, shown)) + f" (+{len(items)-limit} more)"
-
-    return ", ".join(map(str, shown))
-
-
-# ==========================================================
-
-
-def build_narrative(stage_id, tool_name, parsed_result):
-
-    stage = STAGE_BY_ID[stage_id]
-
-    data = parsed_result.get("data", {})
-    summary = parsed_result.get("summary_points", [])
-
-    report = []
-
-    report.append(f"# Stage {stage_id}: {stage['name']}")
-    # report.append("")
-    report.append(f"## Tool Used")
-    report.append(f"**{tool_name}**")
-    # report.append("")
-    # report.append("---")
-    # report.append("")
-    report.append("## Objective")
-    report.append(stage["blurb"])
-    # report.append("")
-    # report.append("---")
-    # report.append("")
-    report.append("## Analysis Summary")
-
-    if summary:
-
-        for item in summary:
-            report.append(f"- {item}")
-
-    else:
-
-        report.append("- No significant findings detected.")
-
-    report.append("")
-    report.append("---")
-    report.append("")
-    report.append("## Extracted Information")
-
+def build_extracted_info(data):
+    bullets = []
     if data.get("domains"):
-        report.append(
-            f"**Domains/Subdomains** : {_fmt_list(data['domains'])}"
-        )
-
+        bullets.append(f"Domains/subdomains ({len(data['domains'])}): {_fmt_list(data['domains'])}")
     if data.get("ips"):
-        report.append(
-            f"**IP Addresses** : {_fmt_list(data['ips'])}"
-        )
-
+        bullets.append(f"IP addresses ({len(data['ips'])}): {_fmt_list(data['ips'])}")
     if data.get("emails"):
-        report.append(
-            f"**Emails** : {_fmt_list(data['emails'])}"
-        )
-
+        bullets.append(f"Emails ({len(data['emails'])}): {_fmt_list(data['emails'])}")
     if data.get("urls"):
-        report.append(
-            f"**URLs** : {_fmt_list(data['urls'])}"
-        )
-
+        bullets.append(f"URLs ({len(data['urls'])}): {_fmt_list(data['urls'])}")
     if data.get("ports"):
-
-        ports = []
-
-        for p in data["ports"]:
-            ports.append(
-                f"{p['port']}/{p['proto']} ({p['service']})"
-            )
-
-        report.append(
-            f"**Open Ports** : {_fmt_list(ports)}"
-        )
-
+        port_strs = [f"{p['port']}/{p['proto']} ({p['service']})" for p in data["ports"]]
+        bullets.append(f"Open ports ({len(data['ports'])}): {_fmt_list(port_strs)}")
+    if data.get("technologies"):
+        bullets.append(f"Technologies ({len(data['technologies'])}): {_fmt_list(data['technologies'])}")
     if data.get("paths"):
-
-        paths = []
-
-        for path, code in data["paths"]:
-            paths.append(f"{path} [{code}]")
-
-        report.append(
-            f"**Directories** : {_fmt_list(paths)}"
-        )
-
+        path_strs = [f"{p}[{c}]" for p, c in data["paths"]]
+        bullets.append(f"Discovered paths ({len(data['paths'])}): {_fmt_list(path_strs)}")
     if data.get("vulns"):
-        report.append(
-            f"**Vulnerabilities** : {_fmt_list(data['vulns'])}"
-        )
-
+        bullets.append(f"Vulnerability categories ({len(data['vulns'])}): {_fmt_list(data['vulns'])}")
     if data.get("cves"):
-        report.append(
-            f"**CVEs** : {_fmt_list(data['cves'])}"
-        )
-
+        bullets.append(f"CVE references ({len(data['cves'])}): {_fmt_list(data['cves'])}")
+    if data.get("osvdb"):
+        bullets.append(f"OSVDB references ({len(data['osvdb'])}): {_fmt_list(data['osvdb'])}")
     if data.get("dbms"):
-        report.append(
-            f"**Database** : {_fmt_list(data['dbms'])}"
-        )
-
+        bullets.append(f"DBMS fingerprinted: {_fmt_list(data['dbms'])}")
     if data.get("params"):
-        report.append(
-            f"**Injectable Parameters** : {_fmt_list(data['params'])}"
-        )
-
+        bullets.append(f"Injectable parameters ({len(data['params'])}): {_fmt_list(data['params'])}")
     if data.get("sessions"):
-        report.append(
-            f"**Sessions** : {_fmt_list(data['sessions'])}"
-        )
-
+        bullets.append(f"Sessions opened ({len(data['sessions'])}): {_fmt_list(data['sessions'])}")
     if data.get("agents"):
-        report.append(
-            f"**Agents** : {_fmt_list(data['agents'])}"
-        )
-
-    report.append("")
-    report.append("---")
-    report.append("")
-    report.append("# Recommended Next Step")
-    report.append("")
-    report.append(next_step_hint(stage_id, data))
-
-    return "\n".join(report)
+        bullets.append(f"C2 agents ({len(data['agents'])}): {_fmt_list(data['agents'])}")
+    if data.get("hooked_events"):
+        bullets.append(f"Hooked-browser events: {len(data['hooked_events'])}")
+    if not bullets:
+        bullets.append("No structured artifacts could be extracted from this output.")
+    return bullets
 
 
-# ==========================================================
+def _priority(condition_high, condition_medium=True):
+    if condition_high:
+        return "High"
+    if condition_medium:
+        return "Medium"
+    return "Low"
 
 
-def next_step_hint(stage_id, data):
-
-    # ==========================================================
-    # STAGE 1
-    # ==========================================================
+def get_recommendations(stage_id, data):
+    """Returns a list of recommendation dicts for the NEXT stage's tools."""
+    recs = []
 
     if stage_id == 1:
-
-        domains = len(data.get("domains", []))
-        ips = len(data.get("ips", []))
-        emails = len(data.get("emails", []))
-        urls = len(data.get("urls", []))
-
-        return f"""
-## Objective
-
-The Information Gathering phase has successfully collected publicly
-available intelligence about the target organization.
-
-The next objective is to enumerate every discovered asset to determine
-which systems are reachable and identify the services exposed to the network.
-
----
-
-## Assets Collected
-
-• Domains / Subdomains : {domains}
-
-• IP Addresses : {ips}
-
-• Email Addresses : {emails}
-
-• Historical URLs : {urls}
-
----
-
-# Recommended Workflow
-
-## Step 1 – Host Discovery
-
-### Tool
-**Nmap**
-
-### Purpose
-
-Determine which discovered hosts are alive.
-
-### Recommended Commands
-
-- Ping Scan
-- TCP SYN Scan
-- Version Detection
-- OS Detection
-
-### Expected Output
-
-• Live Hosts
-
-• Open Ports
-
-• Running Services
-
-• Operating System
-
----
-
-## Step 2 – Technology Fingerprinting
-
-### Tool
-
-**WhatWeb**
-
-### Purpose
-
-Identify technologies running on every web application.
-
-Collect
-
-• Web Server
-
-• CMS
-
-• Framework
-
-• Programming Language
-
-• JavaScript Libraries
-
-• CDN
-
-• WAF
-
----
-
-## Step 3 – Directory Enumeration
-
-### Tool
-
-**Dirsearch**
-
-### Purpose
-
-Discover hidden resources.
-
-Look for
-
-• /admin
-
-• /login
-
-• /dashboard
-
-• /backup
-
-• /config
-
-• /uploads
-
-• API endpoints
-
----
-
-## Step 4 – Manual Enumeration
-
-### Tool
-
-**Burp Suite Community Edition**
-
-### Verify
-
-• Authentication
-
-• Session Cookies
-
-• HTTP Headers
-
-• Parameters
-
-• Forms
-
-• APIs
-
----
-
-# Expected Deliverables
-
-Before moving to Stage 3 you should have:
-
-✅ Live Hosts
-
-✅ Open Ports
-
-✅ Technologies
-
-✅ Hidden Directories
-
-✅ Web Applications
-
-✅ API Endpoints
-
----
-
-# Data Passed to Stage 2
-
-The following information should be available:
-
-• Host List
-
-• Open Ports
-
-• Technologies
-
-• HTTP Services
-
-• Directories
-
-• Parameters
-
-Proceed to **Stage 2 – Scanning & Enumeration**
-"""
-
-    # ==========================================================
-    # STAGE 2
-    # ==========================================================
+        has_targets = bool(data.get("domains") or data.get("ips"))
+        recs.append({
+            "tool": "Nmap", "priority": _priority(has_targets, True),
+            "summary": "Port and service scan against discovered hosts/domains.",
+            "scan_for": "Open TCP/UDP ports, service versions, OS fingerprint.",
+            "expected_output": "List of open ports with service/version banners.",
+        })
+        recs.append({
+            "tool": "WhatWeb", "priority": _priority(False, has_targets),
+            "summary": "Fingerprint web technologies on discovered web hosts.",
+            "scan_for": "CMS, frameworks, server software, JS libraries.",
+            "expected_output": "Technology stack summary per host.",
+        })
+        recs.append({
+            "tool": "Dirsearch", "priority": _priority(False, has_targets),
+            "summary": "Brute-force content discovery on discovered web hosts.",
+            "scan_for": "Hidden directories/files, admin panels, backup files.",
+            "expected_output": "List of accessible paths with HTTP status codes.",
+        })
 
     elif stage_id == 2:
-
-        ports = len(data.get("ports", []))
-        paths = len(data.get("paths", []))
-
-        return f"""
-## Objective
-
-The Scanning & Enumeration stage has identified the network services,
-applications and exposed endpoints.
-
-The next objective is to determine whether these services contain known
-security vulnerabilities.
-
----
-
-## Enumeration Summary
-
-Open Services : {ports}
-
-Directories Found : {paths}
-
----
-
-# Recommended Workflow
-
-## Step 1 – Automated Web Scan
-
-### Tool
-
-**OWASP ZAP**
-
-### Scan For
-
-• SQL Injection
-
-• Cross Site Scripting
-
-• CSRF
-
-• Authentication Issues
-
-• Session Issues
-
-• Sensitive Information Disclosure
-
-Expected Output
-
-• Risk Rating
-
-• Vulnerable URLs
-
-• Attack Evidence
-
----
-
-## Step 2 – Web Server Assessment
-
-### Tool
-
-**Nikto**
-
-### Scan For
-
-• Default Files
-
-• Dangerous HTTP Methods
-
-• Missing Security Headers
-
-• Backup Files
-
-• Known Server Vulnerabilities
-
-• Weak SSL Configuration
-
----
-
-## Step 3 – Application Vulnerability Scan
-
-### Tool
-
-**Wapiti**
-
-Focus On
-
-• SQL Injection
-
-• File Inclusion
-
-• Command Injection
-
-• XXE
-
-• SSRF
-
-• Open Redirect
-
-• CRLF Injection
-
----
-
-## Step 4 – Manual Verification
-
-### Tool
-
-**Burp Suite Professional**
-
-Verify
-
-• Every High Severity Issue
-
-• Authentication Logic
-
-• Session Handling
-
-• Authorization
-
-• Input Validation
-
-• Business Logic
-
----
-
-# Prioritize Findings
-
-High Priority
-
-• Remote Code Execution
-
-• SQL Injection
-
-• Authentication Bypass
-
-• SSRF
-
-Medium Priority
-
-• XSS
-
-• File Inclusion
-
-• Directory Traversal
-
-Low Priority
-
-• Information Disclosure
-
-• Missing Headers
-
-• Cookie Issues
-
----
-
-# Success Criteria
-
-Proceed only when
-
-✅ Every service has been scanned
-
-✅ Every endpoint assessed
-
-✅ False positives removed
-
-✅ CVEs identified
-
-✅ Risk levels assigned
-
----
-
-# Data Passed to Stage 3
-
-• Vulnerability List
-
-• CVEs
-
-• Risk Levels
-
-• Vulnerable URLs
-
-• Injectable Parameters
-
-Proceed to **Stage 3 – Vulnerability Assessment**
-"""
-
-    # ==========================================================
-    # STAGE 3
-    # ==========================================================
+        web_ports = any(str(p.get("port")) in ("80", "443", "8080", "8443")
+                         or p.get("service", "").lower() in ("http", "https")
+                         for p in data.get("ports", []))
+        has_paths = bool(data.get("paths"))
+        recs.append({
+            "tool": "OWASP ZAP", "priority": _priority(web_ports, True),
+            "summary": "Automated web vulnerability scan against discovered services/paths.",
+            "scan_for": "OWASP Top 10 issues (XSS, SQLi, misconfiguration, etc.).",
+            "expected_output": "Vulnerability list with risk ratings and affected URLs.",
+        })
+        recs.append({
+            "tool": "Nikto", "priority": _priority(False, web_ports),
+            "summary": "Web server vulnerability and misconfiguration scan.",
+            "scan_for": "Outdated software, default files/pages, server misconfigurations.",
+            "expected_output": "Flagged issues with OSVDB/CVE references.",
+        })
+        recs.append({
+            "tool": "Wapiti", "priority": _priority(False, has_paths),
+            "summary": "Black-box web application vulnerability scan.",
+            "scan_for": "Injection flaws, file disclosure, XSS.",
+            "expected_output": "Per-endpoint vulnerability report.",
+        })
 
     elif stage_id == 3:
-
-        vulns = len(data.get("vulns", []))
-        cves = len(data.get("cves", []))
-        params = len(data.get("params", []))
-
-        return f"""
-## Objective
-
-The Vulnerability Assessment phase has identified potential security
-weaknesses within the target environment.
-
-The next objective is to validate these findings through controlled
-exploitation while remaining within the authorized engagement scope.
-
----
-
-## Assessment Summary
-
-Vulnerabilities Identified : {vulns}
-
-CVE References : {cves}
-
-Injectable Parameters : {params}
-
----
-
-# Recommended Workflow
-
-## Step 1 – Prioritize Vulnerabilities
-
-Prioritize vulnerabilities according to business impact.
-
-### Critical
-
-• Remote Code Execution
-
-• Authentication Bypass
-
-• SQL Injection
-
-• Privilege Escalation
-
-### High
-
-• Command Injection
-
-• Deserialization
-
-• SSRF
-
-### Medium
-
-• Cross Site Scripting
-
-• File Inclusion
-
-• Directory Traversal
-
-### Low
-
-• Missing Headers
-
-• Version Disclosure
-
-• Cookie Issues
-
----
-
-## Step 2 – Database Exploitation
-
-### Tool
-
-**SQLmap**
-
-### Verify
-
-• SQL Injection
-
-• Database Type
-
-• Database Enumeration
-
-• Tables
-
-• Columns
-
-• Sensitive Records
-
----
-
-## Step 3 – Network Exploitation
-
-### Tool
-
-**Metasploit Framework**
-
-Perform
-
-• Version Matching
-
-• CVE Validation
-
-• Exploit Execution
-
-• Session Verification
-
-• Payload Testing
-
-Expected Output
-
-• Meterpreter Session
-
-• Shell Access
-
-• Evidence of Exploitation
-
----
-
-## Step 4 – Browser Exploitation
-
-### Tool
-
-**BeEF**
-
-Use when
-
-• XSS exists
-
-• Browser Hook is possible
-
-Validate
-
-• Session Hijacking
-
-• Browser Fingerprinting
-
-• Client-side Impact
-
----
-
-## Verification Checklist
-
-Before moving to the next stage ensure:
-
-✅ Exploit successfully reproduced
-
-✅ Screenshots captured
-
-✅ Commands logged
-
-✅ Evidence collected
-
-✅ Business impact documented
-
----
-
-# Data Passed to Stage 4
-
-• Successful Exploits
-
-• Shell Access
-
-• Database Dump
-
-• Credentials
-
-• Sessions
-
-Proceed to **Stage 4 – Exploitation**
-"""
-
-    # ==========================================================
-    # STAGE 4
-    # ==========================================================
+        vulns = [v.lower() for v in data.get("vulns", [])]
+        has_sqli = any("sql" in v for v in vulns)
+        has_xss = any("xss" in v or "cross-site scripting" in v for v in vulns)
+        has_cves = bool(data.get("cves"))
+        recs.append({
+            "tool": "SQLmap", "priority": _priority(has_sqli, has_cves),
+            "summary": "Automated exploitation of suspected SQL injection points.",
+            "scan_for": "Injectable parameters, back-end DBMS, data exfiltration paths.",
+            "expected_output": "Confirmed injection, DBMS fingerprint, extracted data (if authorized).",
+        })
+        recs.append({
+            "tool": "Metasploit Framework", "priority": _priority(has_cves, True),
+            "summary": "Exploit known CVEs / vulnerable services using matching modules.",
+            "scan_for": "Exploitable services matching identified CVEs/versions.",
+            "expected_output": "Shell/session on target if exploit succeeds.",
+        })
+        recs.append({
+            "tool": "BeEF", "priority": _priority(has_xss, False),
+            "summary": "Hook and exploit browsers via confirmed XSS vectors.",
+            "scan_for": "Exploitable XSS injection points.",
+            "expected_output": "Hooked browser session(s) for client-side exploitation.",
+        })
 
     elif stage_id == 4:
-
-        success = (
-            data.get("injectable")
-            or data.get("sessions")
-            or data.get("hooked_events")
-        )
-
-        if success:
-
-            return """
-## Objective
-
-Exploitation was successful.
-
-The next objective is to determine the potential impact after gaining
-authorized access.
-
----
-
-# Recommended Workflow
-
-## Step 1 – Privilege Escalation
-
-Identify
-
-• Administrator Privileges
-
-• Root Privileges
-
-• Misconfigured Services
-
-• Weak Permissions
-
-• SUID Files
-
----
-
-## Step 2 – Credential Collection
-
-Collect
-
-• Password Hashes
-
-• Tokens
-
-• SSH Keys
-
-• API Keys
-
-• Browser Credentials
-
----
-
-## Step 3 – Persistence
-
-### Tool
-
-**Empire**
-
-Create temporary persistence only if explicitly authorized.
-
-Examples
-
-• Scheduled Tasks
-
-• Startup Entries
-
-• PowerShell Agents
-
----
-
-## Step 4 – Internal Enumeration
-
-Discover
-
-• Internal Hosts
-
-• File Shares
-
-• Active Directory
-
-• Domain Controllers
-
-• Sensitive Servers
-
----
-
-## Step 5 – Network Pivoting
-
-If permitted
-
-• Route Traffic
-
-• Access Internal Services
-
-• Validate Segmentation
-
----
-
-## Step 6 – Evidence Collection
-
-Document
-
-• Screenshots
-
-• Command Output
-
-• Session IDs
-
-• Files Accessed
-
-• Proof of Impact
-
----
-
-## Success Criteria
-
-✅ Privilege Level Recorded
-
-✅ Evidence Captured
-
-✅ No Unauthorized Changes
-
-✅ All Actions Logged
-
-Proceed to **Stage 5 – Post-Exploitation**
-"""
-
-        return """
-## Objective
-
-No successful exploitation was detected.
-
----
-
-## Recommended Actions
-
-• Verify the vulnerability manually.
-
-• Remove false positives.
-
-• Check software versions.
-
-• Confirm authentication requirements.
-
-• Try an alternative exploit.
-
-• Review exploit parameters.
-
-• Re-run SQLmap or Metasploit with corrected options.
-
----
-
-Only proceed to Post-Exploitation after successful exploitation has been demonstrated.
-"""
-
-    # ==========================================================
-    # STAGE 5
-    # ==========================================================
+        exploited = bool(data.get("injectable") or data.get("sessions") or data.get("hooked_events"))
+        recs.append({
+            "tool": "Metasploit Framework", "priority": _priority(exploited, True),
+            "summary": "Deploy post-exploitation modules on the compromised host.",
+            "scan_for": "Local privilege escalation paths, stored credentials, sensitive files.",
+            "expected_output": "Elevated privileges, additional loot, persistence options.",
+        })
+        recs.append({
+            "tool": "Empire", "priority": _priority(exploited, False),
+            "summary": "Establish a C2 channel for persistence and lateral movement.",
+            "scan_for": "Domain trusts, reachable internal hosts, credential material.",
+            "expected_output": "Active agent(s) with persistence configured.",
+        })
+        recs.append({
+            "tool": "Netcat", "priority": _priority(False, exploited),
+            "summary": "Set up additional listeners/pivots as needed.",
+            "scan_for": "Reachable internal segments for pivoting.",
+            "expected_output": "Working reverse/bind shell or pivot tunnel.",
+        })
 
     elif stage_id == 5:
-
-        return """
-## Objective
-
-The penetration test is complete.
-
-The final phase focuses on documenting findings,
-removing temporary artifacts, and preparing the final report.
-
----
-
-# Final Checklist
-
-## Documentation
-
-Include
-
-• Executive Summary
-
-• Technical Summary
-
-• Scope
-
-• Methodology
-
-• Timeline
-
-• Risk Matrix
-
----
-
-## Evidence
-
-Attach
-
-• Screenshots
-
-• Logs
-
-• Terminal Output
-
-• Exploit Commands
-
-• Vulnerable Requests
-
-• Responses
-
----
-
-## Risk Assessment
-
-Document
-
-• Critical Findings
-
-• High Findings
-
-• Medium Findings
-
-• Low Findings
-
-Assign
-
-• CVSS Score
-
-• Business Impact
-
-• Remediation Priority
-
----
-
-## Cleanup
-
-Remove
-
-• Test Accounts
-
-• Sessions
-
-• Payloads
-
-• Temporary Files
-
-• Persistence Mechanisms
-
-• Scheduled Tasks
-
-• Registry Changes
-
----
-
-## Remediation Guidance
-
-Provide
-
-• Root Cause
-
-• Affected Assets
-
-• Recommended Fix
-
-• Verification Steps
-
-• References
-
----
-
-## Deliverables
-
-The engagement should include:
-
-✅ Executive Report
-
-✅ Technical Report
-
-✅ Vulnerability List
-
-✅ CVE References
-
-✅ Screenshots
-
-✅ Proof of Concept
-
-✅ Remediation Recommendations
-
-✅ Cleanup Confirmation
-
----
-
-# Engagement Status
-
-**Penetration Test Completed Successfully**
-
-The final report is now ready for delivery to the client.
-"""
-
-    return "Continue to the next stage."
+        recs.append({
+            "tool": "Reporting / Cleanup", "priority": "High",
+            "summary": "Document access gained, privilege level, and lateral movement paths.",
+            "scan_for": "N/A — evidence collection and engagement close-out.",
+            "expected_output": "Final report with timeline, evidence, and remediation guidance.",
+        })
+
+    return sorted(recs, key=lambda r: {"High": 0, "Medium": 1, "Low": 2}[r["priority"]])
+
+def success_criteria(stage_id, data):
+    """Returns (met: bool, criteria_text: str)."""
+    if stage_id == 1:
+        met = bool(data.get("domains") or data.get("ips") or data.get("emails"))
+        return met, "at least one domain, IP address, or email has been identified."
+    if stage_id == 2:
+        met = bool(data.get("ports") or data.get("paths") or data.get("technologies"))
+        return met, "at least one open port, discovered path, or technology fingerprint has been identified."
+    if stage_id == 3:
+        met = bool(data.get("vulns") or data.get("cves") or data.get("osvdb"))
+        return met, "at least one vulnerability category or CVE/OSVDB reference has been identified."
+    if stage_id == 4:
+        met = bool(data.get("injectable") or data.get("sessions") or data.get("hooked_events") or data.get("log_hits"))
+        return met, "exploitation success has been confirmed (session opened, injection confirmed, or browser hooked)."
+    if stage_id == 5:
+        met = bool(data.get("sessions") or data.get("agents") or data.get("ips") or data.get("hooked_events"))
+        return met, "post-exploitation evidence (active session, C2 agent, or access artifact) has been documented."
+    return False, "n/a"
+
+
+def current_stage_summary(stage_id, tool_name, summary_points):
+    stage = STAGE_BY_ID[stage_id]
+    headline = summary_points[0] if summary_points else "No significant findings in this output."
+    return (f"Stage {stage_id} – {stage['name']} was analyzed using **{tool_name}**. {headline}.")
+
+
+def get_custom_guidance(rag_store, stage_id, tool_name):
+    """
+    Hybrid retrieval: search the user's uploaded knowledge base for guidance
+    relevant to this stage/tool. Returns a list of {"doc", "text", "score"}
+    or an empty list if no store is attached / nothing relevant is found.
+    This is purely additive — built-in recommendations always still apply.
+    """
+    if rag_store is None or rag_store.is_empty():
+        return []
+    stage = STAGE_BY_ID[stage_id]
+    query = f"{stage['name']} {tool_name} stage {stage_id} recommendations methodology"
+    return rag_store.search(query, top_k=2, min_score=0.08)
+
+
+def build_report(stage_id, tool_name, parsed_result, rag_store=None):
+    """
+    Builds the structured AI Analysis Report as a dict. Rendering to
+    markdown is handled separately by render_report_markdown().
+    """
+    data = parsed_result.get("data", {})
+    summary_points = parsed_result.get("summary_points", [])
+
+    met, criteria_text = success_criteria(stage_id, data)
+    next_stage = STAGE_BY_ID.get(stage_id + 1)
+
+    report = {
+        "stage_id": stage_id,
+        "stage_name": STAGE_BY_ID[stage_id]["name"],
+        "tool": tool_name,
+        "current_stage_summary": current_stage_summary(stage_id, tool_name, summary_points),
+        "extracted_info": build_extracted_info(data),
+        "recommendations": get_recommendations(stage_id, data) if next_stage else [],
+        "next_stage_name": next_stage["name"] if next_stage else None,
+        "success_criteria_met": met,
+        "success_criteria_text": criteria_text,
+        "proceed_to_next_stage": met and next_stage is not None,
+        "custom_guidance": get_custom_guidance(rag_store, stage_id, tool_name),
+    }
+    return report
+
+
+def render_report_markdown(report):
+    """Formats the structured report dict into the requested markdown layout."""
+    lines = []
+    lines.append("## 🧾 AI Analysis Report")
+    lines.append("")
+    lines.append(f"**Current Stage:** {report['current_stage_summary']}")
+    lines.append("")
+    lines.append("**Extracted Info:**")
+    for b in report["extracted_info"]:
+        lines.append(f"- {b}")
+    lines.append("")
+
+    if report["recommendations"]:
+        lines.append(f"**Recommended Next Stage — {report['next_stage_name']}:**")
+        lines.append("")
+        lines.append("| Priority | Tool | Summary | Scan For | Expected Output |")
+        lines.append("|---|---|---|---|---|")
+        badge = {"High": "🔴 High", "Medium": "🟡 Medium", "Low": "🟢 Low"}
+        for r in report["recommendations"]:
+            lines.append(
+                f"| {badge[r['priority']]} | {r['tool']} | {r['summary']} "
+                f"| {r['scan_for']} | {r['expected_output']} |"
+            )
+        lines.append("")
+
+    if report["custom_guidance"]:
+        lines.append("**📚 Custom guidance from your knowledge base:**")
+        for g in report["custom_guidance"]:
+            snippet = g["text"].strip().replace("\n", " ")
+            if len(snippet) > 280:
+                snippet = snippet[:280].rsplit(" ", 1)[0] + "…"
+            lines.append(f"- _(from **{g['doc']}**, relevance {g['score']})_ {snippet}")
+        lines.append("")
+
+    gate = "✅ Met" if report["success_criteria_met"] else "❌ Not met"
+    lines.append(f"**Success Criteria:** Processed only when {report['success_criteria_text']} — {gate}")
+    lines.append("")
+    proceed = "✅ Yes — proceed to next stage." if report["proceed_to_next_stage"] else (
+        "⛔ No — stay on this stage / gather more data before proceeding."
+        if report["next_stage_name"] else "🏁 Final stage — engagement analysis complete."
+    )
+    lines.append(f"**Proceed to Next Stage:** {proceed}")
+
+    return "\n".join(lines)

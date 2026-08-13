@@ -40,7 +40,6 @@ function TestingProjectList() {
 
             const data = await response.json();
             
-            // Fetch current stage for each project
             const projectsWithStage = await Promise.all(
                 data.map(async (project) => {
                     try {
@@ -87,11 +86,9 @@ function TestingProjectList() {
 
     const handleStartTesting = () => {
         if (selectedProject) {
-            // Find the selected project to get its current stage
             const project = projects.find(p => p.project_id === selectedProject);
             const stage = project?.current_stage || 'SCAN';
             
-            // Navigate with project ID and stage
             navigate(`/tester/testing/${selectedProject}/${stage}`);
         }
     };

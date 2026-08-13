@@ -9,11 +9,26 @@ services:
     volumes:
       - ./backend:/app
 
+
   frontend:
     build:
       context: ./frontend
     container_name: cybertoolkit-frontend
     ports:
-      - "3000:80"
+      - "8080:80"
     depends_on:
       - backend
+
+  # tools:
+  #   build: ./tools
+  #   container_name: cybertoolkit-tools
+
+    
+  kali:
+    image: kalilinux/kali-rolling
+    command: sleep infinity
+    stdin_open: true
+    tty: true
+    mem_limit: 2g
+    # profiles:
+    #   - dev

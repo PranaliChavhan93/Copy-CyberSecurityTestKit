@@ -3966,14 +3966,6 @@ def testmanager_creation(request):
 
     return Response(data)
 
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def testmanager_report(request):
-    return Response({
-        "message": "Welcome to Test Manager Dashboard"
-    })
-
-
 # @api_view(["GET"])
 # @authentication_classes([JWTAuthentication])
 # @permission_classes([IsAuthenticated])
@@ -4165,6 +4157,59 @@ def update_project_stage(request, project_id):
         "message":"Stage updated",
         "current_stage":project.current_stage
     })
+
+@api_view(["GET"])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def testmanager_report(request):
+    """
+    Get all reports for projects managed by the logged-in test manager.
+    """
+    try:
+        user = request.user
+        
+        # Check if user is a test manager
+        if user.role not in ["TEST_MANAGER", "testmanager", "MANAGER", "manager"]:
+            return Response(
+                {"error": "Access Denied. Test Manager privileges required."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        projects = Project.objects.filter(manager=user)
+        project_ids = projects.values_list('project_id', flat=True)
+        
+        reports = Reports.objects.filter(
+            project_id__in=project_ids
+        ).select_related('project')
+        
+        reports_data = []
+        for report in reports:
+            reports_data.append({
+                'report_id': report.report_id,
+                'project_id': report.project.project_id,
+                'project_name': report.project.project_name,
+                'project_type': report.project.project_type,
+                'priority': report.project.priority,
+                'report_status': report.report_status,
+                'generated_date': str(report.generated_date) if hasattr(report, 'generated_date') else None,
+                'approved_date': str(report.approved_date) if hasattr(report, 'approved_date') else None,
+                'rejection_reason': getattr(report, 'rejection_reason', None),
+                'assigned_to': None,  # Will be filled below
+            })
+            
+            assignment = ProjectAssignment.objects.filter(project=report.project).first()
+            if assignment and assignment.tester:
+                reports_data[-1]['assigned_to'] = assignment.tester.username
+        
+        return Response(reports_data, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        print(f"Error in testmanager_reports: {str(e)}")
+        return Response(
+            {"error": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
 
 @api_view(["GET"])
 @authentication_classes([JWTAuthentication])
@@ -4557,3 +4602,268 @@ def ai_analyze(request):
             "success": False,
             "error": str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# @api_view(["POST"])
+# @authentication_classes([JWTAuthentication])
+# @permission_classes([IsAuthenticated])
+# def testmanager_generate_report(request, project_id):
+#     """
+#     Generate a report for a specific project.
+#     """
+#     try:
+#         user = request.user
+        
+#         # Check if user is a test manager
+#         if user.role not in ["TEST_MANAGER", "testmanager", "MANAGER", "manager"]:
+#             return Response(
+#                 {"error": "Access Denied. Test Manager privileges required."},
+#                 status=status.HTTP_403_FORBIDDEN
+#             )
+        
+#         # Get the project
+#         project = get_object_or_404(Project, project_id=project_id)
+        
+#         # Verify the user manages this project
+#         if project.manager != user:
+#             return Response(
+#                 {"error": "You do not have permission to generate reports for this project."},
+#                 status=status.HTTP_403_FORBIDDEN
+#             )
+        
+#         # Check if report already exists
+#         report, created = Reports.objects.get_or_create(
+#             project=project,
+#             defaults={
+#                 'report_status': 'GENERATED',
+#                 'generated_date': datetime.datetime.now()
+#             }
+#         )
+        
+#         if not created:
+#             # Update existing report
+#             report.report_status = 'GENERATED'
+#             report.generated_date = datetime.datetime.now()
+#             report.approved_date = None
+#             report.approved_by = None
+#             report.rejection_reason = None
+#             report.save()
+        
+#         response_data = {
+#             'message': 'Report generated successfully',
+#             'report_id': report.report_id,
+#             'status': report.report_status,
+#             'generated_date': str(report.generated_date)
+#         }
+        
+#         return Response(response_data, status=status.HTTP_201_CREATED)
+        
+#     except Project.DoesNotExist:
+#         return Response(
+#             {'error': 'Project not found'},
+#             status=status.HTTP_404_NOT_FOUND
+#         )
+#     except Exception as e:
+#         print(f"Error in testmanager_generate_report: {str(e)}")
+#         return Response(
+#             {'error': str(e)},
+#             status=status.HTTP_500_INTERNAL_SERVER_ERROR
+#         )
+
+
+# @api_view(["POST"])
+# @authentication_classes([JWTAuthentication])
+# @permission_classes([IsAuthenticated])
+# def testmanager_approve_report(request, project_id):
+#     """
+#     Approve a report for a project.
+#     """
+#     try:
+#         user = request.user
+        
+#         # Check if user is a test manager
+#         if user.role not in ["TEST_MANAGER", "testmanager", "MANAGER", "manager"]:
+#             return Response(
+#                 {"error": "Access Denied. Test Manager privileges required."},
+#                 status=status.HTTP_403_FORBIDDEN
+#             )
+        
+#         # Get the project
+#         project = get_object_or_404(Project, project_id=project_id)
+        
+#         # Verify the user manages this project
+#         if project.manager != user:
+#             return Response(
+#                 {"error": "You do not have permission to approve reports for this project."},
+#                 status=status.HTTP_403_FORBIDDEN
+#             )
+        
+#         # Get the report
+#         report = get_object_or_404(Reports, project=project)
+        
+#         # Update report status
+#         report.report_status = 'APPROVED'
+#         report.approved_by = user
+#         report.approved_date = datetime.datetime.now()
+#         report.save()
+        
+#         return Response({
+#             'message': 'Report approved successfully',
+#             'report_id': report.report_id,
+#             'status': 'APPROVED',
+#             'approved_date': str(report.approved_date)
+#         }, status=status.HTTP_200_OK)
+        
+#     except Project.DoesNotExist:
+#         return Response(
+#             {'error': 'Project not found'},
+#             status=status.HTTP_404_NOT_FOUND
+#         )
+#     except Reports.DoesNotExist:
+#         return Response(
+#             {'error': 'Report not found for this project'},
+#             status=status.HTTP_404_NOT_FOUND
+#         )
+#     except Exception as e:
+#         print(f"Error in testmanager_approve_report: {str(e)}")
+#         return Response(
+#             {'error': str(e)},
+#             status=status.HTTP_500_INTERNAL_SERVER_ERROR
+#         )
+
+
+# @api_view(["POST"])
+# @authentication_classes([JWTAuthentication])
+# @permission_classes([IsAuthenticated])
+# def testmanager_reject_report(request, project_id):
+#     """
+#     Reject a report for a project with a reason.
+#     """
+#     try:
+#         user = request.user
+        
+#         # Check if user is a test manager
+#         if user.role not in ["TEST_MANAGER", "testmanager", "MANAGER", "manager"]:
+#             return Response(
+#                 {"error": "Access Denied. Test Manager privileges required."},
+#                 status=status.HTTP_403_FORBIDDEN
+#             )
+        
+#         # Get the project
+#         project = get_object_or_404(Project, project_id=project_id)
+        
+#         # Verify the user manages this project
+#         if project.manager != user:
+#             return Response(
+#                 {"error": "You do not have permission to reject reports for this project."},
+#                 status=status.HTTP_403_FORBIDDEN
+#             )
+        
+#         # Get the report
+#         report = get_object_or_404(Reports, project=project)
+        
+#         # Get rejection reason from request
+#         data = json.loads(request.body)
+#         reason = data.get('reason', 'No reason provided')
+        
+#         # Update report status
+#         report.report_status = 'REJECTED'
+#         report.rejected_by = user
+#         report.rejected_date = datetime.datetime.now()
+#         report.rejection_reason = reason
+#         report.save()
+        
+#         return Response({
+#             'message': 'Report rejected successfully',
+#             'report_id': report.report_id,
+#             'status': 'REJECTED',
+#             'reason': reason,
+#             'rejected_date': str(report.rejected_date)
+#         }, status=status.HTTP_200_OK)
+        
+#     except Project.DoesNotExist:
+#         return Response(
+#             {'error': 'Project not found'},
+#             status=status.HTTP_404_NOT_FOUND
+#         )
+#     except Reports.DoesNotExist:
+#         return Response(
+#             {'error': 'Report not found for this project'},
+#             status=status.HTTP_404_NOT_FOUND
+#         )
+#     except json.JSONDecodeError:
+#         return Response(
+#             {'error': 'Invalid JSON payload'},
+#             status=status.HTTP_400_BAD_REQUEST
+#         )
+#     except Exception as e:
+#         print(f"Error in testmanager_reject_report: {str(e)}")
+#         return Response(
+#             {'error': str(e)},
+#             status=status.HTTP_500_INTERNAL_SERVER_ERROR
+#         )
+
+
+# @api_view(["GET"])
+# @authentication_classes([JWTAuthentication])
+# @permission_classes([IsAuthenticated])
+# def testmanager_report_detail(request, project_id):
+    """
+    Get detailed report for a specific project.
+    """
+    try:
+        user = request.user
+        
+        # Check if user is a test manager
+        if user.role not in ["TEST_MANAGER", "testmanager", "MANAGER", "manager"]:
+            return Response(
+                {"error": "Access Denied. Test Manager privileges required."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Get the project
+        project = get_object_or_404(Project, project_id=project_id)
+        
+        # Verify the user manages this project
+        if project.manager != user:
+            return Response(
+                {"error": "You do not have permission to view reports for this project."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Get the report
+        report = get_object_or_404(Reports, project=project)
+        
+        response_data = {
+            'project_id': project.project_id,
+            'project_name': project.project_name,
+            'project_type': project.project_type,
+            'priority': project.priority,
+            'report_id': report.report_id,
+            'report_status': report.report_status,
+            'generated_date': str(report.generated_date) if report.generated_date else None,
+            'approved_date': str(report.approved_date) if hasattr(report, 'approved_date') and report.approved_date else None,
+            'rejected_date': str(report.rejected_date) if hasattr(report, 'rejected_date') and report.rejected_date else None,
+            'rejection_reason': getattr(report, 'rejection_reason', None),
+            'report_data': getattr(report, 'report_data', {}),
+            'approved_by': report.approved_by.username if hasattr(report, 'approved_by') and report.approved_by else None,
+        }
+        
+        return Response(response_data, status=status.HTTP_200_OK)
+        
+    except Project.DoesNotExist:
+        return Response(
+            {'error': 'Project not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Reports.DoesNotExist:
+        return Response(
+            {'error': 'Report not found for this project'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        print(f"Error in testmanager_report_detail: {str(e)}")
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

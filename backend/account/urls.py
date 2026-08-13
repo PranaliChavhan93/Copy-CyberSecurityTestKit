@@ -178,6 +178,7 @@
 from asyncio import all_tasks
 
 from django.urls import path
+
 from account.views import (
     assign_tester,
     customer_projects,
@@ -197,6 +198,11 @@ from account.views import (
     standard_rfc,
     tester_list,
     testmanager_report,
+
+    # testmanager_approve_report,
+    # testmanager_generate_report,
+    # testmanager_reject_report,
+    # testmanager_report_detail,
     update_project_stage,
     used_by,
     used_in,
@@ -319,6 +325,11 @@ urlpatterns = [
     path("testmanager/projects/<str:project_id>/assign/", assign_tester),
     path("testmanager/reports/", testmanager_report),
 
+    # path('testmanager/reports/generate/<int:project_id>/', testmanager_generate_report),
+    # path('testmanager/reports/approve/<int:project_id>/', testmanager_approve_report),
+    # path('testmanager/reports/reject/<int:project_id>/', testmanager_reject_report ),
+    # path('testmanager/reports/<int:project_id>/', testmanager_report_detail ),
+
     path('tester/', tester_dashboard),
     path('testers/', tester_list),
     path('tester/testing/', testing),
@@ -334,8 +345,8 @@ urlpatterns = [
     # path('tools/run/<str:project_id>/', run_tool_command),
     path('tools/save-output/', save_output),
     
-    path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
-    path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path("api/token/", TokenObtainPairView.as_view()),
+    path("api/token/refresh/", TokenRefreshView.as_view()),
     
     path("tools/amass/", run_amass),
     path("tester/tool-parameters/", parameter_list),
