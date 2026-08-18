@@ -168,12 +168,12 @@ class UserSession(models.Model):
 class Project(models.Model):
 
     PROJECT_TYPE = (
-        ("WEBAPP", "Web Application"),
+        ("WEB", "Web Application"),
         ("MOBILE", "Mobile"),
         ("NETWORK", "Network"),
-        ("IOT", "IOT"),
+        # ("IOT", "IOT"),
         ("EMBEDDED", "Embedded"),
-        # ("RADIO", "Radio"),
+        ("RADIO", "Radio"),
         ("THICK", "Thick Client"),
         ("SOURCE", "Source Code Analysis"),
     )
@@ -486,7 +486,6 @@ class Tools(models.Model):
         super().save(*args,**kwargs)
 
 
-# class SuiteStageMapping(models.Model):
 class SuiteStageMapping(models.Model):
     suite = models.ForeignKey( Suites, on_delete=models.CASCADE )
     stage = models.ForeignKey( Stages, on_delete=models.CASCADE )
@@ -526,7 +525,7 @@ class Protocols(models.Model):
         ("WEB","Web"),
         ("MOBILE","Mobile"),
         ("NETWORK","Networking"),
-        ("IOT","IoT"),
+        # ("IOT","IoT"),
         ("EMBEDDED","Embedded"),
         ("RADIO","Radio"),
         ("THICK","Thick Client"),

@@ -426,6 +426,7 @@ function ProjectView() {
     };
 
     const [project, setProject] = useState([]);
+    const [suites, setSuites] = useState([]);
     const [selectType, setSelectType] = useState("ALL");
 
     const filterProject =
@@ -444,18 +445,77 @@ function ProjectView() {
 
     const currentProject = filterProject.slice(startIndex, endIndex);
 
+    // useEffect(() => {
+    //     fetch("http://127.0.0.1:8000/projects/")
+    //         .then(async (res) => {
+    //             if (!res.ok) {
+    //                 const text = await res.text();
+    //                 throw new Error(`HTTP ${res.status}`);
+    //             }
+    //             return res.json();
+    //         })
+    //         .then(data => setProject(data))
+    //         .catch(err => console.log(err));
+    // }, []);
+
     useEffect(() => {
-        fetch("http://127.0.0.1:8000/projects/")
-            .then(async (res) => {
-                if (!res.ok) {
-                    const text = await res.text();
-                    throw new Error(`HTTP ${res.status}`);
+        const fetchData = async () => {
+            try {
+                // Fetch projects
+                const projectResponse = await fetch(
+                    "http://127.0.0.1:8000/projects/"
+                );
+
+                if (!projectResponse.ok) {
+                    throw new Error(`Projects API HTTP ${projectResponse.status}`);
                 }
-                return res.json();
-            })
-            .then(data => setProject(data))
-            .catch(err => console.log(err));
+
+                const projectData = await projectResponse.json();
+
+                // Fetch suites
+                const suiteResponse = await fetch(
+                    "http://127.0.0.1:8000/master/suites/"
+                );
+
+                if (!suiteResponse.ok) {
+                    throw new Error(`Suites API HTTP ${suiteResponse.status}`);
+                }
+
+                const suiteData = await suiteResponse.json();
+
+                console.log("PROJECTS:", projectData);
+                console.log("SUITES:", suiteData);
+
+                setProject(Array.isArray(projectData) ? projectData : []);
+                setSuites(Array.isArray(suiteData) ? suiteData : []);
+
+            } catch (err) {
+                console.error("Error fetching project/suite data:", err);
+            }
+        };
+
+        fetchData();
     }, []);
+
+    const getSuiteName = (projectType) => {
+        if (!projectType) return "N/A";
+
+        const type = String(projectType).trim().toUpperCase();
+
+        const matchedSuite = suites.find((suite) => {
+            const suiteId = String(suite.id ?? "").trim().toUpperCase();
+            const suiteCode = String(suite.suite_id ?? "").trim().toUpperCase();
+            const suiteName = String(suite.suite_name ?? "").trim().toUpperCase();
+
+            return (
+                type === suiteId ||
+                type === suiteCode ||
+                type === suiteName
+            );
+        });
+
+        return matchedSuite?.suite_name || projectType;
+    };
 
     return (
         <div className="view-container">
@@ -509,7 +569,7 @@ function ProjectView() {
 
                                 <div className="card-body">
                                     <div className="project-type">
-                                        <i className="fas fa-tag"></i> {project.project_type || "N/A"}
+                                        <i className="fas fa-tag"></i> {getSuiteName(project.project_type)}
                                     </div>
                                     <div className="project-type">
                                         <i className="fas fa-tag"></i> {project.customer || "N/A"}

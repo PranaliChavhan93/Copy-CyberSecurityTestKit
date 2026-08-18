@@ -11,7 +11,7 @@ Design goals (per requirements):
 - Works over documents the user uploads (methodology guides, playbooks,
   OWASP testing notes, prior reports, cheat sheets, etc.) stored as plain
   text/markdown, or PDF if `pypdf` is installed.
-
+ 
 Usage:
     store = RagStore()
     store.add_document("playbook.md", text)

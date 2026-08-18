@@ -7,6 +7,7 @@ import "../Master/ProjectView.css";
 function TMProjects() {
 
     const [projects, setProjects] = useState([]);
+    const [suites, setSuites] = useState([]);
     const [selectType, setSelectType] = useState("ALL");
     const [selectStatus, setSelectStatus] = useState("ALL");
 
@@ -79,26 +80,91 @@ function TMProjects() {
         return stageMap[stage] || stage || "Not Started";
     };
 
+    const getSuiteName = (projectType) => {
+        if (!projectType) return "N/A";
+
+        const type = String(projectType).trim().toUpperCase();
+
+        const matchedSuite = suites.find((suite) => {
+            const suiteId = String(suite.id ?? "").trim().toUpperCase();
+            const suiteCode = String(suite.suite_id ?? "").trim().toUpperCase();
+            const suiteName = String(suite.suite_name ?? "").trim().toUpperCase();
+
+            return (
+                type === suiteId ||
+                type === suiteCode ||
+                type === suiteName
+            );
+        });
+
+        return matchedSuite?.suite_name || projectType;
+    };
+
     useEffect(() => {
         const token = sessionStorage.getItem("access");
 
-        fetch("http://127.0.0.1:8000/testmanager/projects/", {
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-            },
-        })
-        .then(async (res) => {
-            const data = await res.json();
-            if (!res.ok) {
-                throw new Error(data.error || "Unable to fetch projects");
+        const fetchProjectsAndSuites = async () => {
+            try {
+                // Fetch projects
+                const projectResponse = await fetch(
+                    "http://127.0.0.1:8000/testmanager/projects/",
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                            "Content-Type": "application/json",
+                        },
+                    }
+                );
+
+                const projectData = await projectResponse.json();
+
+                if (!projectResponse.ok) {
+                    throw new Error(
+                        projectData.error || "Unable to fetch projects"
+                    );
+                }
+
+                // Fetch suites
+                const suiteResponse = await fetch(
+                    "http://127.0.0.1:8000/master/suites/",
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                            "Content-Type": "application/json",
+                        },
+                    }
+                );
+
+                const suiteData = await suiteResponse.json();
+
+                if (!suiteResponse.ok) {
+                    throw new Error(
+                        suiteData.error || "Unable to fetch suites"
+                    );
+                }
+
+                console.log("TM PROJECTS:", projectData);
+                console.log("SUITES:", suiteData);
+
+                setProjects(
+                    Array.isArray(projectData)
+                        ? projectData
+                        : []
+                );
+
+                setSuites(
+                    Array.isArray(suiteData)
+                        ? suiteData
+                        : []
+                );
+
+            } catch (err) {
+                console.error(err);
+                toast.error("Unable to load projects.");
             }
-            setProjects(Array.isArray(data) ? data : []);
-        })
-        .catch((err) => {
-            console.log(err);
-            toast.error("Unable to load projects.");
-        });
+        };
+
+        fetchProjectsAndSuites();
     }, []);
 
     const filteredProjects = projects.filter(project => {
@@ -229,7 +295,7 @@ function TMProjects() {
 
                                 <div className="card-body">
                                     <div className="deadline">
-                                        <i className="fas fa-tag"></i> {project.project_type || "N/A"}
+                                        <i className="fas fa-layer-group"></i>{" "} {getSuiteName(project.project_type)}
                                     </div>
                                     
                                     <div className="deadline">
