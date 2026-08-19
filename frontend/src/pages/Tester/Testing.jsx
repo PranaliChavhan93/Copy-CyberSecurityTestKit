@@ -722,11 +722,6 @@ function Testing() {
 
     const API = "http://127.0.0.1:8000";
     const token = sessionStorage.getItem("access");
-
-    // ============================================================
-    // STATE
-    // ============================================================
-
     const [project, setProject] = useState(null);
 
     const [suites, setSuites] = useState([]);
@@ -742,31 +737,12 @@ function Testing() {
     const [parameters, setParameters] = useState({});
     const [selectedTool, setSelectedTool] = useState("");
 
-    // ============================================================
-    // HELPERS
-    // ============================================================
-
     const normalize = (value) => {
         return String(value ?? "")
             .trim()
             .toUpperCase();
     };
 
-    /*
-     * Project type -> possible values that may exist
-     * in the Suite table.
-     *
-     * Example:
-     *
-     * Project:
-     *     WEBAPP
-     *
-     * Suite:
-     *     WEB
-     *     Web Application
-     *
-     * All of these will be treated as the same suite.
-     */
     const SUITE_TYPE_MAP = {
         WEBAPP: [
             "WEBAPP",
@@ -826,16 +802,7 @@ function Testing() {
         ],
     };
 
-    /*
-     * Check whether the project type can represent
-     * the supplied suite.
-     */
-    const isProjectSuiteMatch = (
-        projectType,
-        suiteDatabaseId,
-        suiteCode,
-        suiteName
-    ) => {
+    const isProjectSuiteMatch = ( projectType, suiteDatabaseId, suiteCode, suiteName ) => {
         const normalizedProjectType = normalize(projectType);
 
         const possibleValues =
@@ -853,10 +820,6 @@ function Testing() {
             );
         });
     };
-
-    // ============================================================
-    // 1. FETCH MASTER SUITES
-    // ============================================================
 
     useEffect(() => {
         const fetchSuites = async () => {
@@ -881,30 +844,20 @@ function Testing() {
                 }
 
                 if (Array.isArray(data)) {
-                    console.log(
-                        "MASTER SUITES:",
-                        data
-                    );
-
-                    console.table(
-                        data.map((item) => ({
-                            id: item.id,
-                            suite_id: item.suite_id,
-                            suite_name:
-                                item.suite_name,
-                        }))
-                    );
-
+                    // console.table(
+                    //     data.map((item) => ({
+                    //         id: item.id,
+                    //         suite_id: item.suite_id,
+                    //         suite_name:
+                    //             item.suite_name,
+                    //     }))
+                    // );
                     setSuites(data);
                 } else {
                     setSuites([]);
                 }
             } catch (error) {
-                console.error(
-                    "Error fetching suites:",
-                    error
-                );
-
+                console.error( "Error fetching suites:", error );
                 setSuites([]);
             }
         };
@@ -912,17 +865,12 @@ function Testing() {
         fetchSuites();
     }, []);
 
-    // ============================================================
-    // 2. FETCH PROJECT
-    // ============================================================
-
     useEffect(() => {
         if (!projectId) return;
 
         const fetchProject = async () => {
             try {
-                const response = await fetch(
-                    `${API}/tester/projects/${projectId}/`,
+                const response = await fetch( `${API}/tester/projects/${projectId}/`,
                     {
                         headers: {
                             Authorization: `Bearer ${token}`,
@@ -930,28 +878,13 @@ function Testing() {
                         },
                     }
                 );
-
                 const data = await response.json();
-
                 if (!response.ok) {
                     throw data;
                 }
-
-                console.log(
-                    "================================="
-                );
-                console.log(
-                    "PROJECT DATA:",
-                    data
-                );
-
                 setProject(data);
             } catch (error) {
-                console.error(
-                    "Error fetching project:",
-                    error
-                );
-
+                console.error( "Error fetching project:", error );
                 setProject(null);
             }
         };

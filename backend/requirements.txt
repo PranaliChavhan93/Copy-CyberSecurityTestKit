@@ -203,7 +203,7 @@ pypdf==6.0.0
 
 beautifulsoup4==4.13.5
 lxml==6.0.2
-PyYAML==6.0.2
+PyYAML==6.0.3
 markdown==3.9
 Pygments==2.19.2
 python-slugify==8.0.4
