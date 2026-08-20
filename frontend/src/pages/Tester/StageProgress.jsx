@@ -1,14 +1,47 @@
-
 function StageProgress({ stage, onClick }) {
     const stages = [
         "INFO",
         "SCAN",
         "VULN",
         "EXPLOIT",
-        "POST"
+        "POST",
     ];
 
-    const currentIndex = stages.indexOf(stage);
+    const normalizeStage = (value) => {
+        const normalized = String(value ?? "")
+            .trim()
+            .toUpperCase();
+
+        const stageMap = {
+            // Stage codes
+            INFO: "INFO",
+            SCAN: "SCAN",
+            VULN: "VULN",
+            EXPLOIT: "EXPLOIT",
+            POST: "POST",
+
+            // Database stage IDs
+            ST001: "INFO",
+            ST002: "SCAN",
+            ST003: "VULN",
+            ST004: "EXPLOIT",
+            ST005: "POST",
+
+            // Stage names
+            "INFORMATION GATHERING": "INFO",
+            "SCANNING & ENUMERATION": "SCAN",
+            "SCANNING AND ENUMERATION": "SCAN",
+            "VULNERABILITY ASSESSMENT": "VULN",
+            "EXPLOITATION": "EXPLOIT",
+            "POST EXPLOITATION": "POST",
+            "POST-EXPLOITATION": "POST",
+        };
+
+        return stageMap[normalized] || "INFO";
+    };
+
+    const normalizedStage = normalizeStage(stage);
+    const currentIndex = stages.indexOf(normalizedStage);
 
     return (
         <>
@@ -16,49 +49,73 @@ function StageProgress({ stage, onClick }) {
                 {stages.map((item, index) => {
                     let status = "pending";
 
+                    // Previous stages = GREEN
                     if (index < currentIndex) {
                         status = "completed";
-                    } else if (index === currentIndex) {
+                    }
+
+                    // Current stage = BLUE
+                    else if (index === currentIndex) {
                         status = "current";
+                    }
+
+                    // Future stages = GREY
+                    else {
+                        status = "pending";
                     }
 
                     return (
                         <span
                             key={item}
                             className={`stage-dot ${status}`}
-                            title={item}
-                            onClick={() => onClick(item)}
-                        ></span>
+                            title={
+                                index === currentIndex
+                                    ? `${item} - Current Stage`
+                                    : item
+                            }
+                            onClick={() => {
+                                if (onClick) {
+                                    onClick(item);
+                                }
+                            }}
+                        />
                     );
                 })}
             </div>
 
             <style>{`
-                .stage-progress{
-                    display:flex;
-                    gap:15px;
-                    align-items:center;
-                    padding:15px 0;
+                .stage-progress {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
                 }
 
-                .stage-dot{
-                    width:18px;
-                    height:18px;
-                    border-radius:50%;
-                    display:block;
-                    cursor:pointer;
+                .stage-dot {
+                    width: 12px;
+                    height: 10px;
+                    border-radius: 50%;
+                    display: inline-block;
+                    box-sizing: border-box;
+                    background: #d1d5db;
+                    transition: all 0.2s ease;
                 }
 
-                .stage-dot.completed{
-                    background:#00c853;
+                /* Previous stages */
+                .stage-dot.completed {
+                    background: #22c55e !important;
+                    border-color: #22c55e !important;
                 }
 
-                .stage-dot.current{
-                    background:#1976d2;
+                /* CURRENT STAGE */
+                .stage-dot.current {
+                    background: #2563eb !important;
+                    border: 2px solid #2563eb !important;
                 }
 
-                .stage-dot.pending{
-                    background:#bdbdbd;
+                /* Opcomming stages */
+                .stage-dot.pending {
+                    background: #d1d5db !important;
+                    border-color: #d1d5db !important;
                 }
             `}</style>
         </>

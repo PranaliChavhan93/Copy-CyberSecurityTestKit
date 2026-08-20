@@ -47,7 +47,6 @@ function ProjectCreation() {
         setLoading(true);
 
         try {
-            // Fetch customers with authentication
             const customersResponse = await fetch("http://127.0.0.1:8000/customers/", {
                 headers: {
                     "Authorization": `Bearer ${token}`,

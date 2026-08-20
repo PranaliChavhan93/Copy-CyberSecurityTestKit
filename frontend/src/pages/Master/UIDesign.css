@@ -1,12 +1,10 @@
 /* =====================================================
    USER VIEW PAGE
 ===================================================== */
-
 .view-container{
     width:100%;
     min-height:100vh;
     padding:25px;
-    /* background:#f0f2f5; */
     box-sizing:border-box;
     overflow-x:auto;
 }
@@ -406,14 +404,12 @@
 }
 
 /* Readonly */
-
 .readonly-field{
     background:#f3f4f6 !important;
     cursor:not-allowed;
 }
 
 /* Error */
-
 .error-text{
     margin-top:5px;
     font-size:12px;
@@ -421,7 +417,6 @@
 }
 
 /* Responsive */
-
 @media(max-width:768px){
 
     .user-create-container{

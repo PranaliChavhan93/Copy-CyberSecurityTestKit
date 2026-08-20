@@ -211,19 +211,24 @@
     border-radius: 20px;
 }
 
+.priority-critical {
+    color: #991b1b;
+    background: rgba(153, 27, 27, 0.12);
+}
+
 .priority-high {
     color: #dc2626;
-    background: rgba(220, 38, 38, 0.1);
+    background: rgba(220, 38, 38, 0.12);
 }
 
 .priority-medium {
     color: #d97706;
-    background: rgba(217, 119, 6, 0.1);
+    background: rgba(217, 119, 6, 0.12);
 }
 
 .priority-low {
-    color: #22c55e;
-    background: rgba(34, 197, 94, 0.1);
+    color: #16a34a;
+    background: rgba(22, 163, 74, 0.12);
 }
 
 /* Status Badges */
